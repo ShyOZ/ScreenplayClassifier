@@ -1,4 +1,6 @@
 # Imports
+import nltk
+
 from nltk.corpus import stopwords
 from nltk.stem import snowball, WordNetLemmatizer
 from nltk.tokenize import word_tokenize, sent_tokenize

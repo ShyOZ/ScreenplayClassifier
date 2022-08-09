@@ -1,37 +1,29 @@
 # Imports
 from nltk.corpus import wordnet
-#from typing import List
+from typing import List
+
+# Important Definitions
+'''
+hypernyms: a word that names a broad category that includes other words.
+            e.g.: "primate" is a hypernym for "chimpanzee" and "human".
+hyponyms: a word whose meaning is included in that of another word.
+            e.g.: "scarlet", "vermilion", and "crimson" are hyponyms of "red".           
+meronyms: a part of something used to refer to the whole.
+            e.g.: "faces" meaning "people", as in "they've seen a lot of faces come and go".
+holonyms: a term that denotes a whole, a part of which is denoted by a second term.
+            e.g.: "face" is a holonym of the word "eye".
+antynyms: a word of opposite meaning.
+            e.g.: "good" and "bad", "hot" and "cold", "up" and "down" etc.
+'''
 
 # Methods
-def get_word_synsets(word: str) -> set:
-    return set(wordnet.synsets(word))
+def get_genre_synsets(genre: str) -> set:
+    if genre == "SciFi":
+        science, fiction = tuple(wordnet.synsets("Science")), tuple(wordnet.synsets("Fiction"))
+        return set(science.__add__(fiction))
 
-def get_sentence_synsets(sentence: str) -> set:
-    sentence_synsets = set()
+    return set(wordnet.synsets(genre))
 
-    for word in sentence:
-        sentence_synsets.add(tuple(get_word_synsets(word)))
-
-    return sentence_synsets
-
-def get_word_lemmas(word: str) -> set:
-    word_synsets = get_word_synsets(word)
-    word_lemmas = set()
-
-    for synset in word_synsets:
-        for lemma in synset.lemmas():
-            word_lemmas.add(lemma.name())
-
-    return word_lemmas
-
-def get_sentence_lemmas(sentence: str) -> set:
-    sentence_lemmas = set()
-
-    for word in sentence:
-        sentence_lemmas.add(tuple(get_word_lemmas(word)))
-
-    return sentence_lemmas
-
-# Main
-if __name__ == "__main__":
+def get_genres_semmantic_similarity(genre1: wordnet.synset, genre2: wordnet.synset) -> None:
+    #TODO: COMPLETE (gets common hypernyms, hyponyms and such between 2 given genres)
     pass
