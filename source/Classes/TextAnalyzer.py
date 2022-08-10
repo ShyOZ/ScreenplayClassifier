@@ -28,7 +28,3 @@ def get_tokens(text: str) -> List[str]:
 
 def get_corpus(text: str) -> dict:
     return { "Words": get_words(text), "Sentences": get_sentences(text) }
-
-# Main
-if __name__ == "__main__":
-    pass
