@@ -1,16 +1,20 @@
 # Imports
+import pandas as pd
 import sys
 
-from os.path import basename
-from Classes.Classifier import process_screenplay
+from Classifier import classify
+from typing import List
+
+# Methods
+def build_dataframe(file_paths: List[str]) -> pd.DataFrame:
+    # TODO: Read all screenplays' text and metadata and arrange everything in dataframe
+    # (columns: [UID, Name, Text, Predicted Genres, Actual Genres])
+
+    return pd.DataFrame()
 
 # Main
 if __name__ == "__main__":
-    file_paths = sys.argv[1:]
-    classifications_dict = {}
+    screenplays_dataframe = build_dataframe(sys.argv[1:])
+    classifications_dict = classify(screenplays_dataframe)
 
-    for file_path in file_paths:
-        classifications_dict[basename(file_path)] = process_screenplay(file_path)
-
-    for screenplay, genres in classifications_dict.items():
-        print(f"{screenplay}: {genres}")
+    print(classifications_dict)

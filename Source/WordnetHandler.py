@@ -5,7 +5,7 @@ from typing import Dict, List
 from nltk.tag import *
 from nltk.corpus import wordnet
 
-from Source.Classes.TextAnalyzer import get_words
+from Source.TextProcessor import get_words
 
 # Important Definitions
 # synset: a group of synonymous words that express the same concept
@@ -46,22 +46,3 @@ def get_parts_of_speech(text: str) -> Dict[str, List[str]]:
         temp_pos[pos].append(word)
 
     return {"Nouns": temp_pos["NOUN"], "Verbs": temp_pos["VERB"], "Adjectives": temp_pos["ADJ"], "Adverbs": temp_pos["ADV"]}
-
-def get_genres_parts_of_speech(definitions_dict: Dict[str, List[str]]) -> Dict[str, Dict[str, List[str]]]:
-    genre_parts_of_speech = {}
-
-    for genre, genre_definitions in definitions_dict.items():
-        genre_parts_of_speech[genre] = {"Nouns": [], "Verbs": [], "Adjectives": [], "Adverbs": []}
-        for definition in genre_definitions:
-            definition_pos = get_parts_of_speech(definition)
-            genre_parts_of_speech[genre]["Nouns"].extend(definition_pos["Nouns"])
-            genre_parts_of_speech[genre]["Verbs"].extend(definition_pos["Verbs"])
-            genre_parts_of_speech[genre]["Adjectives"].extend(definition_pos["Adjectives"])
-            genre_parts_of_speech[genre]["Adverbs"].extend(definition_pos["Adverbs"])
-
-        genre_parts_of_speech[genre]["Nouns"] = set(genre_parts_of_speech[genre]["Nouns"])
-        genre_parts_of_speech[genre]["Verbs"] = set(genre_parts_of_speech[genre]["Verbs"])
-        genre_parts_of_speech[genre]["Adjectives"] = set(genre_parts_of_speech[genre]["Adjectives"])
-        genre_parts_of_speech[genre]["Adverbs"] = set(genre_parts_of_speech[genre]["Adverbs"])
-        
-    return genre_parts_of_speech

@@ -27,4 +27,4 @@ def get_tokens(text: str) -> List[str]:
     return [stemmer.stem(token) for token in lemmatized_tokens]
 
 def get_corpus(text: str) -> dict:
-    return { "Words": get_words(text), "Sentences": get_sentences(text) }
+    return {"Words": get_words(text), "Sentences": get_sentences(text)}
