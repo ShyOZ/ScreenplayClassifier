@@ -11,8 +11,7 @@ from typing import List, Dict
 
 # Methods
 def classify(screenplays: pd.DataFrame) -> Dict[int, List[str]]:
-    genres = open("../Resources/Genres.txt").read().splitlines()
-    # screenplay_text = open(screenplay_path, "r").read()
+    print(screenplays)
 
     # TODO: COMPLETE
 
