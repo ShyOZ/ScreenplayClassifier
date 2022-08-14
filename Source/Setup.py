@@ -2,13 +2,17 @@
 import pandas as pd
 import os, pathlib, re, sys
 
+from nltk.corpus import stopwords
 from Classifier import classify
 
 # Methods
 def clean_text(text: str) -> str:
-    text = re.sub("\'", "", text)           # Removes backslash-apostrophe
-    text = re.sub("[^a-zA-Z]", " ", text)   # Removes everything except alphabets
-    text = ' '.join(text.split())           # Removes whitespaces
+    stop_words = set(stopwords.words("english"))
+
+    text = re.sub("\'", "", text)                                               # Removes backslash-apostrophe
+    text = re.sub("[^a-zA-Z]", " ", text)                                       # Removes everything except alphabets
+    text = ' '.join([word for word in text.split() if word not in stop_words])  # Removes stopwords
+    text = ' '.join(text.split())                                               # Removes whitespaces
 
     return text.lower()
 
@@ -25,21 +29,26 @@ def read_screenplays() -> pd.DataFrame:
 
     return pd.DataFrame({"Title": screenplays_dict.keys(), "Screenplay": screenplays_dict.values()})
 
+def remove_non_classified_screenplays(dataframe: pd.DataFrame) -> pd.DataFrame:
+    genre_columns = open("../Resources/Genres.txt").read().splitlines()
+    removed_offsets = []
+
+    for offset, screenplay in dataframe.iterrows():
+        if all(screenplay[genre] == "0" for genre in genre_columns):
+            removed_offsets.append(offset)
+
+    return dataframe.drop(removed_offsets)
+
 def build_dataframe() -> pd.DataFrame:
     screenplays_df, genres_df = read_screenplays(), pd.read_csv("../Resources/Title_To_Genre.csv")
     records_count = len(screenplays_df)
     dataframe = pd.DataFrame({"ID": [i for i in range(records_count)]})
     dataframe = dataframe.join(pd.merge(screenplays_df, genres_df, on="Title"))
 
-    # Removes un-classified screenplays
-
-
-    return dataframe
+    return remove_non_classified_screenplays(dataframe)
 
 # Main
 if __name__ == "__main__":
-    screenplay_args = sys.argv[1:]
-    screenplays = build_dataframe()
-    classifications = classify(screenplays)
+    classifications = classify(build_dataframe(), sys.argv[1:])
 
     print(classifications)
