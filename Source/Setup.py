@@ -1,20 +1,12 @@
 # Imports
 import pandas as pd
-import os, pathlib, re, sys
+import os, pathlib, sys
 
 from nltk.corpus import stopwords
 from Classifier import classify
 
 # Methods
-def clean_text(text: str) -> str:
-    stop_words = set(stopwords.words("english"))
 
-    text = re.sub("\'", "", text)                                               # Removes backslash-apostrophe
-    text = re.sub("[^a-zA-Z]", " ", text)                                       # Removes everything except alphabets
-    text = ' '.join([word for word in text.split() if word not in stop_words])  # Removes stopwords
-    text = ' '.join(text.split())                                               # Removes whitespaces
-
-    return text.lower()
 
 def read_screenplays() -> pd.DataFrame:
     screenplays_directory = "../Resources/Screenplays/"
@@ -25,9 +17,9 @@ def read_screenplays() -> pd.DataFrame:
     for i in range(len(file_names)):
         screenplay_title = pathlib.Path(file_names[i]).stem
         screenplay_text = open(f"{screenplays_directory}{screenplay_title}.txt", encoding="utf8").read()
-        screenplays_dict[screenplay_title] = clean_text(screenplay_text)
+        screenplays_dict[screenplay_title] = screenplay_text
 
-    return pd.DataFrame({"Title": screenplays_dict.keys(), "Screenplay": screenplays_dict.values()})
+    return pd.DataFrame({"Title": screenplays_dict.keys(), "Text": screenplays_dict.values()})
 
 def remove_non_classified_screenplays(dataframe: pd.DataFrame) -> pd.DataFrame:
     genre_columns = open("../Resources/Genres.txt").read().splitlines()

@@ -1,22 +1,29 @@
 # Imports
 import pandas as pd
-import numpy as np
-import nltk
 
-from sklearn.datasets import make_multilabel_classification
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
-from sklearn.multioutput import MultiOutputClassifier
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.preprocessing import MultiLabelBinarizer
+
 from typing import List, Dict
 
 # Methods
 def classify(screenplay_dataframe: pd.DataFrame, screenplay_names : List[str]) -> List[str]:
-    screenplays_to_classify = screenplay_dataframe.loc[screenplay_dataframe["Title"].isin(screenplay_names)]
-    x, y = make_multilabel_classification(n_classes=12, random_state=0)
-    multioutput_classifier = MultiOutputClassifier(LogisticRegression()).fit(x, y)
+    genre_labels = open("../Resources/Genres.txt").read().splitlines()
+    x, t = screenplay_dataframe["Text"], screenplay_dataframe[genre_labels]
 
-    print(multioutput_classifier.predict(x))
+    x_train, x_validation, y_train, y_validation = train_test_split(x, t, test_size=0.2, random_state=42)
+    tfidf_vectorizer = TfidfVectorizer(max_df=0.8, max_features=10000)
+    x_train_tfidf = tfidf_vectorizer.fit_transform(x_train)
+    x_validation_tfidf = tfidf_vectorizer.transform(x_validation)
+
+    one_vs_rest_classifier = OneVsRestClassifier(LogisticRegression())
+    one_vs_rest_classifier.fit(x_train_tfidf, y_train)
+    y_predictions = one_vs_rest_classifier.predict(x_validation_tfidf)
+
+    print(y_predictions)
 
     return ["", "", ""]
