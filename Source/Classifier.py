@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import f1_score
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.preprocessing import MultiLabelBinarizer
 
@@ -23,7 +24,11 @@ def train(train_screenplays: pd.DataFrame) -> Tuple:
 
     one_vs_rest_classifier = OneVsRestClassifier(LogisticRegression())
     one_vs_rest_classifier.fit(x_train_tfidf, y_train)
-    y_predictions = one_vs_rest_classifier.predict(x_validation_tfidf)
+    # y_predictions = one_vs_rest_classifier.predict(x_validation_tfidf)
+
+    y_probabilities = one_vs_rest_classifier.predict_proba(x_validation_tfidf)
+    y_predictions = (y_probabilities >= 0.1).astype(int)
+    print(f1_score(y_validation, y_predictions, average="micro"))
 
     return tuple([multilabel_binarizer, tfidf_vectorizer, one_vs_rest_classifier])
 
@@ -32,9 +37,9 @@ def classify(train_screenplays: pd.DataFrame, test_screenplays : pd.DataFrame) -
     classifications_dict = {}
 
     for offset, test_screenplay in test_screenplays.iterrows():
-        test_vector = tfidf_vectorizer.transform(test_screenplay["Actual Genres"])
+        test_vector = tfidf_vectorizer.transform([test_screenplay["Text"]])
         test_prediction = multilabel_binarizer.inverse_transform(one_vs_rest_classifier.predict(test_vector))
-        predicted_genres = list(sum(test_prediction, ())) # Flats the list of tuples
+        predicted_genres = list(sum(test_prediction, ())) # Flattens the list of tuples
         classifications_dict[test_screenplay["Title"]] = predicted_genres
 
     test_classifications = pd.DataFrame({"Title": classifications_dict.keys(),
