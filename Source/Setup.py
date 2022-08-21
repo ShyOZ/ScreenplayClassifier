@@ -8,7 +8,7 @@ from typing import List
 
 # Methods
 def read_train_screenplays() -> pd.DataFrame:
-    screenplays_directory = f"../Resources/Screenplays/Train/"
+    screenplays_directory = f"../Resources/Screenplays/"
     file_paths = os.listdir(screenplays_directory)
     screenplays_dict = {}
 
@@ -32,16 +32,12 @@ def read_test_screenplays(file_paths: List[str]) -> pd.DataFrame:
 
 def read_genres() -> pd.DataFrame:
     genre_labels = open("../Resources/Genres.txt").read().splitlines()
-    genres_df = pd.read_csv("../Resources/Screenplays/Title_To_Genre.csv")
+    info_ds = pd.read_json("../Resources/Movie Script Info.json")
     genres_dict = {}
 
     # Builds a dictionary of screenplay genres by its title
-    for offset, classification in genres_df.iterrows():
-        screenplay_title = classification["Title"]
-        actual_genres = [label for label in genre_labels if int(classification[label]) == 1]
-
-        if len(actual_genres) > 0:
-            genres_dict[screenplay_title] = actual_genres
+    for offset, info in info_ds.iterrows():
+        genres_dict[info["title"]] = info["genres"]
 
     return pd.DataFrame({"Title": genres_dict.keys(), "Actual Genres": genres_dict.values()})
 
