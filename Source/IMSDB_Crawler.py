@@ -8,14 +8,15 @@ from bs4 import BeautifulSoup
 from dataclasses import dataclass, field
 from dataclasses_json import dataclass_json
 
-from typing import Set
+from typing import Set, Union
 
 IMSDB_ROOT = "http://www.imsdb.com"
 
 RESOURCE_PATH = Path("../Resources")
 OUTPUT_PATH = RESOURCE_PATH / "Screenplays"
-OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
+TARGET_GENRES = set((RESOURCE_PATH / "Genres.txt").read_text().splitlines())
 
+OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
 
 @dataclass_json
 @dataclass(frozen=True)
@@ -25,12 +26,7 @@ class ScriptInfo:
     script_url: str
     genres: set[str] = field(default_factory=set)
 
-
-def get_genres_from_file(filepath: Path) -> Set[str]:
-    return set(filepath.read_text().splitlines())
-
-
-def get_movie_info_links_from_genre(genre: str) -> Set[str] | None:
+def get_movie_info_links_from_genre(genre: str) -> Union[Set[str], None]:
     request = requests.get(f"http://www.imsdb.com/genre/{genre}", timeout=5)
     if request.status_code != requests.codes.ok:
         return None
@@ -42,7 +38,7 @@ def get_movie_info_links_from_genre(genre: str) -> Set[str] | None:
     return {IMSDB_ROOT + tag["href"] for tag in link_tags}
 
 
-def get_script_information(movie_info_url: str, target_genres: Set[str]) -> ScriptInfo | None:
+def get_script_information(movie_info_url: str) -> Union[ScriptInfo, None]:
     request = requests.get(movie_info_url, timeout=5)
     if request.status_code != requests.codes.ok:
         return None
@@ -65,12 +61,12 @@ def get_script_information(movie_info_url: str, target_genres: Set[str]) -> Scri
 
     genre_links = details_table.find_all("a", title=re.compile("Scripts$"))
     genres = {genre["href"][len("/genre/"):] for genre in genre_links}
-    genres = set(filter(lambda g: g in target_genres, genres))
+    genres = set(filter(lambda g: g in TARGET_GENRES, genres))
 
     return ScriptInfo(title, movie_info_url, script_url, genres)
 
 
-def get_movie_script(script_url: str) -> str | None:
+def get_movie_script(script_url: str) -> Union[str, None]:
     request = requests.get(script_url, timeout=5)
     if request.status_code != requests.codes.ok:
         return None
@@ -94,10 +90,10 @@ def write_script_to_file(script_title: str, script_text: str) -> None:
     script_file_path.write_text(script_text, encoding="utf-8")
 
 
-def process_task(info_url, target_genres):
+def process_task(info_url):
     while True:
         try:
-            script_info = get_script_information(info_url, target_genres)
+            script_info = get_script_information(info_url)
             if script_info is None:
                 return None
 
@@ -116,9 +112,8 @@ def process_task(info_url, target_genres):
 
 if __name__ == "__main__":
     all_urls = set()
-    target_genres = get_genres_from_file(RESOURCE_PATH / "Genres.txt")
 
-    for genre in tqdm(target_genres, desc="processing genres"):
+    for genre in tqdm(TARGET_GENRES, desc="processing genres"):
         genre_urls = get_movie_info_links_from_genre(genre)
         all_urls = all_urls.union(genre_urls)
 
