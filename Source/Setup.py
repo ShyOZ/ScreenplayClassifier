@@ -3,7 +3,7 @@ import pandas as pd
 import os, pathlib, sys
 
 from Classifier import classify
-from TextProcessor import process_text
+from TextProcessor import *
 from typing import List
 
 # Methods
@@ -26,7 +26,7 @@ def read_test_screenplays(file_paths: List[str]) -> pd.DataFrame:
     for file_path in file_paths:
         screenplay_title = pathlib.Path(file_path).stem
         screenplay_text = open(file_path, "r", encoding="utf8").read()
-        screenplays_dict[screenplay_title] = process_text(screenplay_text)
+        screenplays_dict[screenplay_title] = screenplay_text #process_text(screenplay_text)
 
     return pd.DataFrame({"Title": screenplays_dict.keys(), "Text": screenplays_dict.values()})
 
@@ -43,8 +43,30 @@ def read_genres() -> pd.DataFrame:
 
 # Main
 if __name__ == "__main__":
-    train_screenplays = pd.merge(read_train_screenplays(), read_genres(), on="Title")
-    test_screenplays = read_test_screenplays(sys.argv[1:])
+    train_screenplays_df = pd.merge(read_train_screenplays(), read_genres(), on="Title")
+    test_screenplays_df = read_test_screenplays(sys.argv[1:])
+    concordances_dict = {}
+    word_appearances_dict = {}
 
-    classifications = classify(train_screenplays, test_screenplays)
-    print(classifications)
+    classifications_df = classify(train_screenplays_df, test_screenplays_df)
+    for _, classfication in classifications_df.iterrows():
+        concordance, word_appearances = build_concordance_and_word_appearances(classfication["Text"])
+        concordances_dict[classfication["Title"]] = [concordance]
+        word_appearances_dict[classfication["Title"]] = [word_appearances]
+
+    concordances_df = pd.DataFrame.from_dict(concordances_dict, orient="index", columns=["Concordance"])
+    word_appearances_df = pd.DataFrame.from_dict(word_appearances_dict, orient="index", columns=["Word Appearances"])
+
+    print(concordances_df.to_json(orient="index", indent=4))
+    print(word_appearances_df.to_json(orient="index", indent=4))
+    # classifications_df = pd.concat([classifications_df, concordances_df,word_appearances_df], axis="columns")
+    #
+    # classifications_df.set_index("Title")
+
+    """
+    title               |   predicted genres    |   concordance                     |   appearances
+    "american psycho"       [action, ...]           {'american': {0, 2018,...},...}      {'american': 8,...}
+    """
+
+    classification_json_string = classifications_df.to_json(orient="index", indent=4)
+    print(classification_json_string)
