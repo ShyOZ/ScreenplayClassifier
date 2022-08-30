@@ -54,19 +54,17 @@ if __name__ == "__main__":
         concordances_dict[classfication["Title"]] = [concordance]
         word_appearances_dict[classfication["Title"]] = [word_appearances]
 
-    concordances_df = pd.DataFrame.from_dict(concordances_dict, orient="index", columns=["Concordance"])
-    word_appearances_df = pd.DataFrame.from_dict(word_appearances_dict, orient="index", columns=["Word Appearances"])
+    concordances_df = pd.DataFrame({"Title": concordances_dict.keys(), "Concordace": concordances_dict.values()})
+    word_appearances_df = pd.DataFrame({"Title": word_appearances_dict.keys(),
+                                        "Word Appearances": word_appearances_dict.values()})
 
-    print(concordances_df.to_json(orient="index", indent=4))
-    print(word_appearances_df.to_json(orient="index", indent=4))
-    # classifications_df = pd.concat([classifications_df, concordances_df,word_appearances_df], axis="columns")
-    #
-    # classifications_df.set_index("Title")
+    classifications_df = pd.merge(classifications_df, concordances_df, on="Title")
+    classifications_df = pd.merge(classifications_df, word_appearances_df, on="Title")
+    classifications_df = classifications_df.drop("Text", axis=1)
 
     """
     title               |   predicted genres    |   concordance                     |   appearances
     "american psycho"       [action, ...]           {'american': {0, 2018,...},...}      {'american': 8,...}
     """
 
-    classification_json_string = classifications_df.to_json(orient="index", indent=4)
-    print(classification_json_string)
+    print(classifications_df.to_json(orient="records", indent=4))
