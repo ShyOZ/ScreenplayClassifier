@@ -1,8 +1,10 @@
 # Imports
+import time
+
 import pandas as pd
 import os, pathlib, sys
 
-from Classifier import classify
+from Classifier import *
 from TextProcessor import *
 from typing import List
 
@@ -23,6 +25,7 @@ def read_train_screenplays() -> pd.DataFrame:
 def read_test_screenplays(file_paths: List[str]) -> pd.DataFrame:
     screenplays_dict = {}
 
+    # Builds a dictionary of screenplay text by its title
     for file_path in file_paths:
         screenplay_title = pathlib.Path(file_path).stem
         screenplay_text = open(file_path, "r", encoding="utf8").read()
@@ -43,28 +46,20 @@ def read_genres() -> pd.DataFrame:
 
 # Main
 if __name__ == "__main__":
-    train_screenplays_df = pd.merge(read_train_screenplays(), read_genres(), on="Title")
-    test_screenplays_df = read_test_screenplays(sys.argv[1:])
-    concordances_dict = {}
-    word_appearances_dict = {}
+    # Loads train and test screenplays
+    train_screenplays = pd.merge(read_train_screenplays(), read_genres(), on="Title")
+    test_screenplays = read_test_screenplays(sys.argv[1:])
 
-    classifications_df = classify(train_screenplays_df, test_screenplays_df)
-    for _, classfication in classifications_df.iterrows():
-        concordance, word_appearances = build_concordance_and_word_appearances(classfication["Text"])
-        concordances_dict[classfication["Title"]] = [concordance]
-        word_appearances_dict[classfication["Title"]] = [word_appearances]
+    # Classifies the test screenplays
+    if not module_trained:
+        train(train_screenplays)
 
-    concordances_df = pd.DataFrame({"Title": concordances_dict.keys(), "Concordace": concordances_dict.values()})
-    word_appearances_df = pd.DataFrame({"Title": word_appearances_dict.keys(),
-                                        "Word Appearances": word_appearances_dict.values()})
-
-    classifications_df = pd.merge(classifications_df, concordances_df, on="Title")
-    classifications_df = pd.merge(classifications_df, word_appearances_df, on="Title")
-    classifications_df = classifications_df.drop("Text", axis=1)
+    classifications = classify(train_screenplays, test_screenplays)
 
     """
+    OUTPUT EXAMPLE:
     title               |   predicted genres    |   concordance                     |   appearances
     "american psycho"       [action, ...]           {'american': {0, 2018,...},...}      {'american': 8,...}
     """
 
-    print(classifications_df.to_json(orient="records", indent=4))
+    print(classifications.to_json(orient="records", indent=4))
