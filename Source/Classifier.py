@@ -10,7 +10,6 @@ from sklearn.multiclass import OneVsRestClassifier
 from sklearn.preprocessing import MultiLabelBinarizer
 
 from TextProcessor import *
-from tqdm import tqdm
 from typing import Tuple
 
 # Globals
@@ -43,9 +42,9 @@ def classify(train_screenplays: pd.DataFrame, test_screenplays : pd.DataFrame) -
     classifications_dict = {}
     concordances_dict = {}
     word_appearances_dict = {}
-    progress_bar = tqdm(test_screenplays.iterrows(), total=test_screenplays.shape[0], disable=True)
+    classifications_complete = 0
 
-    for offset, test_screenplay in progress_bar:
+    for offset, test_screenplay in test_screenplays.iterrows():
         test_vector = tfidf_vectorizer.transform([test_screenplay["Text"]])
         test_prediction = multilabel_binarizer.inverse_transform(one_vs_rest_classifier.predict(test_vector))
         predicted_genres = list(sum(test_prediction, ())) + ["Unknown", "Unknown", "Unknown"] # Flattens list of tuples
@@ -55,7 +54,10 @@ def classify(train_screenplays: pd.DataFrame, test_screenplays : pd.DataFrame) -
         concordances_dict[test_screenplay["Title"]] = [concordance]
         word_appearances_dict[test_screenplay["Title"]] = [word_appearances]
 
-        # TODO: COMPLETE (Prints progress bar's percent (for WPF GUI))
+        classifications_complete += 1
+        print(classifications_complete)
+
+        time.sleep(0.3) # Sleep for 0.3 seconds
 
     return pd.DataFrame({"Title": classifications_dict.keys(),
                                          "Predicted Genres": classifications_dict.values(),
