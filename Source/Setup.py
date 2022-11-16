@@ -53,8 +53,10 @@ if __name__ == "__main__":
 
     """
     OUTPUT EXAMPLE:
-    title               |   predicted genres    |   concordance                     |   appearances
-    "american psycho"       [action, ...]           {'american': {0, 2018,...},...}      {'american': 8,...}
+    Title               |   Genre Percentages        |  Concordance                     |   Word Appearances
+    "american psycho"       {"Action"   : 23.67,
+                             "Adventure": 12.92
+                              ...}                      {"american": {0, 2018,...},...}     {"american": 8,...}
     """
 
     # Prints classifications to process

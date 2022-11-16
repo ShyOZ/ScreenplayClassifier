@@ -37,9 +37,23 @@ def save_pickle(binarizer: object, vectorizer: object, classifier: object) -> No
     pickle.dump([saved_binarizer, saved_vectorizer, saved_classifier], pickle_file)
     pickle_file.close()
 
+def probabilities_to_percentages(probabilities: List[float]) -> Dict[str, float]:
+    genre_labels = open("../Resources/Genres.txt").read().splitlines()
+    probabilities_dict = dict(zip(genre_labels, probabilities))
+    probabilities_dict = dict(sorted(probabilities_dict.items(), key=lambda item: item[1], reverse=True))
+    sum_of_probabilities = sum(probabilities)
+    percentages_dict = {}
+
+    # Converts each genre's probability to matching percentage
+    for genre, probability in probabilities_dict.items():
+        percentages_dict[genre] = (probability / sum_of_probabilities) * 100
+
+    return percentages_dict
+
 def train(train_screenplays: pandas.DataFrame) -> List[object]:
     # Loads classifier's variables from file
     binarizer, vectorizer, classifier = load_pickle()
+    threshold = 0.3
 
     binarizer.fit(train_screenplays["Actual Genres"])
     y = binarizer.transform(train_screenplays["Actual Genres"])
@@ -51,11 +65,10 @@ def train(train_screenplays: pandas.DataFrame) -> List[object]:
     x_validation_tfidf = vectorizer.transform(x_validation)
 
     classifier.fit(x_train_tfidf, y_train)
-    # y_predictions = one_vs_rest_classifier.predict(x_validation_tfidf)
 
     y_probabilities = classifier.predict_proba(x_validation_tfidf)
-    y_predictions = (y_probabilities >= 0.1).astype(int)
-    # print(f1_score(y_validation, y_predictions, average="micro"))
+    y_predictions = (y_probabilities >= threshold).astype(int)
+    print("Model F1 Score: " + str(f1_score(y_validation, y_predictions, average="micro")))
 
     return [binarizer, vectorizer, classifier]
 
@@ -68,23 +81,24 @@ def classify(classifier_variables: List[object], test_screenplays: pandas.DataFr
 
     for offset, test_screenplay in test_screenplays.iterrows():
         test_vector = vectorizer.transform([test_screenplay["Text"]])
-        test_prediction = binarizer.inverse_transform(classifier.predict(test_vector))
-        predicted_genres = list(sum(test_prediction, ())) + ["Unknown", "Unknown", "Unknown"] # Flattens list of tuples
+        test_probabilities = sum(classifier.predict_proba(test_vector).tolist(), []) # Flattens the list
+        test_percentages = probabilities_to_percentages(test_probabilities)
+
         concordance, word_appearances = build_concordance_and_word_appearances(test_screenplay["Text"])
 
-        classifications_dict[test_screenplay["Title"]] = predicted_genres[:3]
+        classifications_dict[test_screenplay["Title"]] = test_percentages
         concordances_dict[test_screenplay["Title"]] = [concordance]
         word_appearances_dict[test_screenplay["Title"]] = [word_appearances]
 
         classifications_complete += 1
-        print(classifications_complete)
+        print(f"Classified: {classifications_complete}")
 
-        time.sleep(0.3) # Sleep for 0.3 seconds
+        time.sleep(0.5) # Sleep for 0.5 seconds
 
     # Saves classifier's variables to file
     save_pickle(binarizer, vectorizer, classifier)
 
     return pandas.DataFrame({"Title": classifications_dict.keys(),
-                                         "Predicted Genres": classifications_dict.values(),
+                                         "Genre Percentages": classifications_dict.values(),
                                          "Concordance": concordances_dict.values(),
                                          "Word Appearances": word_appearances_dict.values()})
