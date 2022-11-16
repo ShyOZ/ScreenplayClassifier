@@ -91,7 +91,7 @@ def classify(classifier_variables: List[object], test_screenplays: pandas.DataFr
         word_appearances_dict[test_screenplay["Title"]] = [word_appearances]
 
         classifications_complete += 1
-        print(f"Classified: {classifications_complete}")
+        print(classifications_complete)
 
         time.sleep(0.5) # Sleep for 0.5 seconds
 
