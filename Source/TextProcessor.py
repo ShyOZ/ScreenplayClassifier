@@ -25,15 +25,3 @@ def clean_word(word: str) -> str:
         word = word.replace(delimeter, "")
 
     return word
-
-def build_concordance_and_word_appearances(text: str) -> Tuple[Dict[str, Set[int]], Dict[str, int]]:
-    concordance, word_appearances = defaultdict(set), defaultdict(lambda: 0)
-    sentences = [sentence.lower() for sentence in sent_tokenize(text)]
-
-    for i, sentence in enumerate(sentences):
-        words = [clean_word(word) for word in sentence.split()]
-        for word in words:
-            concordance[word].add(i + 1) # lines in text are 1-based
-            word_appearances[word] += 1
-
-    return dict(concordance), dict(word_appearances)

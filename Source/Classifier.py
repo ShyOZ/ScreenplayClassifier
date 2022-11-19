@@ -75,8 +75,6 @@ def train(train_screenplays: pandas.DataFrame) -> List[object]:
 def classify(classifier_variables: List[object], test_screenplays: pandas.DataFrame) -> pandas.DataFrame:
     binarizer, vectorizer, classifier = classifier_variables
     classifications_dict = {}
-    concordances_dict = {}
-    word_appearances_dict = {}
     classifications_complete = 0
 
     for offset, test_screenplay in test_screenplays.iterrows():
@@ -84,11 +82,7 @@ def classify(classifier_variables: List[object], test_screenplays: pandas.DataFr
         test_probabilities = sum(classifier.predict_proba(test_vector).tolist(), []) # Flattens the list
         test_percentages = probabilities_to_percentages(test_probabilities)
 
-        concordance, word_appearances = build_concordance_and_word_appearances(test_screenplay["Text"])
-
         classifications_dict[test_screenplay["Title"]] = test_percentages
-        concordances_dict[test_screenplay["Title"]] = [concordance]
-        word_appearances_dict[test_screenplay["Title"]] = [word_appearances]
 
         classifications_complete += 1
         print(classifications_complete)
@@ -99,6 +93,4 @@ def classify(classifier_variables: List[object], test_screenplays: pandas.DataFr
     save_pickle(binarizer, vectorizer, classifier)
 
     return pandas.DataFrame({"Title": classifications_dict.keys(),
-                                         "Genre Percentages": classifications_dict.values(),
-                                         "Concordance": concordances_dict.values(),
-                                         "Word Appearances": word_appearances_dict.values()})
+                             "Genre Percentages": classifications_dict.values()})
