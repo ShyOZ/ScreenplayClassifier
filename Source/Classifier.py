@@ -8,7 +8,6 @@ from sklearn.metrics import f1_score
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.preprocessing import MultiLabelBinarizer
 from TextProcessor import *
-from typing import List
 
 # Globals
 default_binarizer   = MultiLabelBinarizer()
@@ -16,7 +15,7 @@ default_vectorizer  = TfidfVectorizer(max_df=0.8, max_features=10000)
 default_classifier  = OneVsRestClassifier(LogisticRegression())
 
 # Methods
-def load_pickle() -> List[object]:
+def load_pickle():
     pickle_file = open(f"../Resources/Pickle", "rb")
     loaded_binarizer, loaded_vectorizer, loaded_classifier = pickle.load(pickle_file)
     pickle_file.close()
@@ -27,7 +26,7 @@ def load_pickle() -> List[object]:
 
     return [binarizer, vectorizer, classifier]
 
-def save_pickle(binarizer: object, vectorizer: object, classifier: object) -> None:
+def save_pickle(binarizer, vectorizer, classifier):
     # Validation
     saved_binarizer = binarizer if binarizer is not None else default_binarizer
     saved_vectorizer = vectorizer if vectorizer is not None else default_vectorizer
@@ -37,7 +36,7 @@ def save_pickle(binarizer: object, vectorizer: object, classifier: object) -> No
     pickle.dump([saved_binarizer, saved_vectorizer, saved_classifier], pickle_file)
     pickle_file.close()
 
-def probabilities_to_percentages(probabilities: List[float]) -> Dict[str, float]:
+def probabilities_to_percentages(probabilities):
     genre_labels = open("../Resources/Genres.txt").read().splitlines()
     probabilities_dict = dict(zip(genre_labels, probabilities))
     probabilities_dict = dict(sorted(probabilities_dict.items(), key=lambda item: item[1], reverse=True))
@@ -50,7 +49,7 @@ def probabilities_to_percentages(probabilities: List[float]) -> Dict[str, float]
 
     return percentages_dict
 
-def train(train_screenplays: pandas.DataFrame) -> List[object]:
+def train(train_screenplays):
     # Loads classifier's variables from file
     binarizer, vectorizer, classifier = load_pickle()
     threshold = 0.3
@@ -71,7 +70,7 @@ def train(train_screenplays: pandas.DataFrame) -> List[object]:
 
     return [binarizer, vectorizer, classifier]
 
-def classify(classifier_variables: List[object], test_screenplays: pandas.DataFrame) -> pandas.DataFrame:
+def classify(classifier_variables, test_screenplays):
     binarizer, vectorizer, classifier = classifier_variables
     classifications_dict = {}
     classifications_complete = 0

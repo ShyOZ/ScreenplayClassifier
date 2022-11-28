@@ -2,13 +2,11 @@
 import nltk, re
 
 from nltk.corpus import stopwords
-from typing import Dict, Set, Tuple
-from collections import defaultdict
-# from nltk.stem import PorterStemmer
+from nltk.stem import PorterStemmer
 from nltk.tokenize import sent_tokenize
 
 # Methods
-def process_text(text: str) -> str:
+def process_text(text: str):
     # TODO: COMPLETE
     stop_words = set(stopwords.words("english"))
     # porter_stemmer = PorterStemmer()
@@ -18,7 +16,7 @@ def process_text(text: str) -> str:
 
     return text.lower()
 
-def clean_word(word: str) -> str:
+def clean_word(word: str):
     delimeters = [char for char in " ,.-_—:;!?\""]
 
     for delimeter in delimeters:

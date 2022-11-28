@@ -3,10 +3,9 @@ import pandas, os, pathlib, sys
 
 from Classifier import *
 from TextProcessor import *
-from typing import List
 
 # Methods
-def read_train_screenplays() -> pandas.DataFrame:
+def read_train_screenplays():
     screenplays_directory = f"../Resources/Screenplays/"
     file_paths = os.listdir(screenplays_directory)
     screenplays_dict = {}
@@ -19,7 +18,7 @@ def read_train_screenplays() -> pandas.DataFrame:
 
     return pandas.DataFrame({"Title": screenplays_dict.keys(), "Text": screenplays_dict.values()})
 
-def read_test_screenplays(file_paths: List[str]) -> pandas.DataFrame:
+def read_test_screenplays(file_paths):
     screenplays_dict = {}
 
     # Builds a dictionary of screenplay text by its title
@@ -30,7 +29,7 @@ def read_test_screenplays(file_paths: List[str]) -> pandas.DataFrame:
 
     return pandas.DataFrame({"Title": screenplays_dict.keys(), "Text": screenplays_dict.values()})
 
-def read_genres() -> pandas.DataFrame:
+def read_genres():
     genre_labels = open("../Resources/Genres.txt").read().splitlines()
     info_ds = pandas.read_json("../Resources/Movie Script Info.json")
     genres_dict = {}
