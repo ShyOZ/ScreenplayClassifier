@@ -68,7 +68,6 @@ def train(train_screenplays: pandas.DataFrame) -> List[object]:
 
     y_probabilities = classifier.predict_proba(x_validation_tfidf)
     y_predictions = (y_probabilities >= threshold).astype(int)
-    print("Model F1 Score: " + str(f1_score(y_validation, y_predictions, average="micro")))
 
     return [binarizer, vectorizer, classifier]
 
