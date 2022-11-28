@@ -42,13 +42,14 @@ def read_genres():
 
 # Main
 if __name__ == "__main__":
-    # Loads train and test screenplays
-    train_screenplays = pandas.merge(read_train_screenplays(), read_genres(), on="Title")
+    # Loads test screenplays (script's arguments)
     test_screenplays = read_test_screenplays(sys.argv[1:])
 
-    # Trains the model and classifies the test screenplays
-    classifier_variables = train(train_screenplays)
-    classifications = classify(classifier_variables, test_screenplays)
+    # Loads model variables from pickle and trains them (if necessary)
+    model_variables = train()
+
+    # Classifies test screenplays
+    classifications = classify(model_variables, test_screenplays)
 
     """
     OUTPUT EXAMPLE:

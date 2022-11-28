@@ -7,6 +7,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.preprocessing import MultiLabelBinarizer
+
+from Setup import *
 from TextProcessor import *
 
 # Globals
@@ -49,24 +51,26 @@ def probabilities_to_percentages(probabilities):
 
     return percentages_dict
 
-def train(train_screenplays):
+def train():
     # Loads classifier's variables from file
     binarizer, vectorizer, classifier = load_pickle()
-    threshold = 0.3
 
-    binarizer.fit(train_screenplays["Actual Genres"])
-    y = binarizer.transform(train_screenplays["Actual Genres"])
+    # If training is required
+    if (binarizer == default_binarizer) or (vectorizer == default_vectorizer) or (classifier == default_classifier):
+        train_screenplays = pandas.merge(read_train_screenplays(), read_genres(), on="Title")
 
-    x_train, x_validation, y_train, y_validation = train_test_split(train_screenplays["Text"], y, test_size=0.2,
-                                                                    random_state=42)
+        binarizer.fit(train_screenplays["Actual Genres"])
+        y = binarizer.transform(train_screenplays["Actual Genres"])
 
-    x_train_tfidf = vectorizer.fit_transform(x_train)
-    x_validation_tfidf = vectorizer.transform(x_validation)
+        x_train, x_validation, y_train, y_validation = train_test_split(train_screenplays["Text"], y, test_size=0.2,
+                                                                        random_state=42)
 
-    classifier.fit(x_train_tfidf, y_train)
+        x_train_tfidf = vectorizer.fit_transform(x_train)
+        x_validation_tfidf = vectorizer.transform(x_validation)
 
-    y_probabilities = classifier.predict_proba(x_validation_tfidf)
-    y_predictions = (y_probabilities >= threshold).astype(int)
+        classifier.fit(x_train_tfidf, y_train)
+
+        y_probabilities = classifier.predict_proba(x_validation_tfidf)
 
     return [binarizer, vectorizer, classifier]
 
