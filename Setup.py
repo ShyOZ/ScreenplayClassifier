@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
     """
     OUTPUT EXAMPLE:
-    Title               |   Genre Percentages        
+    Title               |   GenrePercentages        
     "american psycho"       {"Action"   : 23.67, "Adventure": 12.92 ... }
     """
 

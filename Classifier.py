@@ -96,4 +96,4 @@ def classify(classifier_variables, test_screenplays):
     save_pickle(binarizer, vectorizer, classifier)
 
     return pandas.DataFrame({"Title": classifications_dict.keys(),
-                             "Genre Percentages": classifications_dict.values()})
+                             "GenrePercentages": classifications_dict.values()})
