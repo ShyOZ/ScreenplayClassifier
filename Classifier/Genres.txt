@@ -7,6 +7,6 @@ Family
 Fantasy
 Horror
 Romance
-Sci-Fi
+SciFi
 Thriller
 War
