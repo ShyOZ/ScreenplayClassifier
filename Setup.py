@@ -6,7 +6,7 @@ from TextProcessor import *
 
 # Methods
 def read_train_screenplays():
-    screenplays_directory = f"../Resources/Screenplays/"
+    screenplays_directory = f"./TrainScreenplays/"
     file_paths = os.listdir(screenplays_directory)
     screenplays_dict = {}
 
@@ -30,8 +30,8 @@ def read_test_screenplays(file_paths):
     return pandas.DataFrame({"Title": screenplays_dict.keys(), "Text": screenplays_dict.values()})
 
 def read_genres():
-    genre_labels = open("../Resources/Genres.txt").read().splitlines()
-    info_ds = pandas.read_json("../Resources/Movie Script Info.json")
+    genre_labels = open("Classifier/Genres.txt").read().splitlines()
+    info_ds = pandas.read_json("Movie Script Info.json")
     genres_dict = {}
 
     # Builds a dictionary of screenplay genres by its title

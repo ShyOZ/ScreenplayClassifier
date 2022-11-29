@@ -1,6 +1,7 @@
 # Imports
 import os, time, pandas, pickle
 
+from pathlib import Path
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
@@ -18,7 +19,7 @@ default_classifier  = OneVsRestClassifier(LogisticRegression())
 
 # Methods
 def load_pickle():
-    pickle_file = open(f"../Resources/Pickle", "rb")
+    pickle_file = open(Path.cwd() / "Classifier/Pickle", "rb")
     loaded_binarizer, loaded_vectorizer, loaded_classifier = pickle.load(pickle_file)
     pickle_file.close()
 
@@ -34,12 +35,12 @@ def save_pickle(binarizer, vectorizer, classifier):
     saved_vectorizer = vectorizer if vectorizer is not None else default_vectorizer
     saved_classifier = classifier if classifier is not None else default_classifier
 
-    pickle_file = open(f"../Resources/Pickle", "wb")
+    pickle_file = open(Path.cwd() / "Classifier/Pickle", "wb")
     pickle.dump([saved_binarizer, saved_vectorizer, saved_classifier], pickle_file)
     pickle_file.close()
 
 def probabilities_to_percentages(probabilities):
-    genre_labels = open("../Resources/Genres.txt").read().splitlines()
+    genre_labels = open(Path.cwd() / "Classifier/Genres.txt").read().splitlines()
     probabilities_dict = dict(zip(genre_labels, probabilities))
     probabilities_dict = dict(sorted(probabilities_dict.items(), key=lambda item: item[1], reverse=True))
     sum_of_probabilities = sum(probabilities)

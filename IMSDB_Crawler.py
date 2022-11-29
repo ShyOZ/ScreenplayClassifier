@@ -12,8 +12,8 @@ from typing import Set, Union
 
 IMSDB_ROOT = "http://www.imsdb.com"
 
-RESOURCE_PATH = Path("../Resources")
-OUTPUT_PATH = RESOURCE_PATH / "Screenplays"
+RESOURCE_PATH = Path("Resources")
+OUTPUT_PATH = RESOURCE_PATH / "TrainScreenplays"
 TARGET_GENRES = set((RESOURCE_PATH / "Genres.txt").read_text().splitlines())
 
 OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
