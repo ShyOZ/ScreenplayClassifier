@@ -1,4 +1,6 @@
 # Imports
+import json
+
 import pandas, os, pathlib, sys
 
 from Classifier import *
@@ -30,7 +32,7 @@ def read_test_screenplays(file_paths):
     return pandas.DataFrame({"Title": screenplays_dict.keys(), "Text": screenplays_dict.values()})
 
 def read_genres():
-    genre_labels = open("Classifier/Genres.txt").read().splitlines()
+    genre_labels = json.load(open("Jsons/Genres.json"))
     info_ds = pandas.read_json("Movie Script Info.json")
     genres_dict = {}
 

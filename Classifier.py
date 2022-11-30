@@ -40,7 +40,7 @@ def save_pickle(binarizer, vectorizer, classifier):
     pickle_file.close()
 
 def probabilities_to_percentages(probabilities):
-    genre_labels = open(Path.cwd() / "Classifier/Genres.txt").read().splitlines()
+    genre_labels = json.load(open("Jsons/Genres.json"))
     probabilities_dict = dict(zip(genre_labels, probabilities))
     probabilities_dict = dict(sorted(probabilities_dict.items(), key=lambda item: item[1], reverse=True))
     sum_of_probabilities = sum(probabilities)
