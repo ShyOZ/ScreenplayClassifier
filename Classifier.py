@@ -87,6 +87,7 @@ def classify(classifier_variables, test_screenplays):
 
         classifications_dict[test_screenplay["Title"]] = test_percentages
 
+        # prints progress (for GUI to update progress)
         classifications_complete += 1
         print(classifications_complete)
 
