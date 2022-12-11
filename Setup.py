@@ -1,10 +1,11 @@
 # Imports
-import json
-
-import pandas, os, pathlib, sys
+import json, pandas, os, pathlib, sys
 
 from Classifier import *
-from TextProcessor import *
+from TextProcessor import process_text
+
+# Globals
+genre_labels = json.load(open("Jsons/Genres.json"))
 
 # Methods
 def read_train_screenplays():
@@ -27,12 +28,11 @@ def read_test_screenplays(file_paths):
     for file_path in file_paths:
         screenplay_title = pathlib.Path(file_path).stem
         screenplay_text = open(file_path, "r", encoding="utf8").read()
-        screenplays_dict[screenplay_title] = screenplay_text #process_text(screenplay_text)
+        screenplays_dict[screenplay_title] = process_text(screenplay_text)
 
     return pandas.DataFrame({"Title": screenplays_dict.keys(), "Text": screenplays_dict.values()})
 
 def read_genres():
-    genre_labels = json.load(open("Jsons/Genres.json"))
     info_ds = pandas.read_json("Movie Script Info.json")
     genres_dict = {}
 
@@ -44,11 +44,12 @@ def read_genres():
 
 # Main
 if __name__ == "__main__":
-    # Loads test screenplays (script's arguments)
+    # Loads train and test screenplays
+    train_screenplays = pandas.merge(read_train_screenplays(), read_genres(), on="Title")
     test_screenplays = read_test_screenplays(sys.argv[1:])
 
     # Loads model variables from pickle and trains them (if necessary)
-    model_variables = train()
+    model_variables = train(train_screenplays)
 
     # Classifies test screenplays
     classifications = classify(model_variables, test_screenplays)
