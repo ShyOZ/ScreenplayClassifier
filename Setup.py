@@ -13,18 +13,15 @@ genre_labels = load(open("Jsons/Genres.json"))
 
 # Methods
 def load_screenplays(file_paths):
-    screenplay_texts_dict = {}
-    screenplay_sentences_dict = {}
+    screenplays_dict = {}
 
     # Builds a dictionary of screenplay text by its title
     for file_path in file_paths:
         screenplay_title = Path(file_path).stem
         screenplay_text = open(file_path, "r", encoding="utf8").read()
-        screenplay_texts_dict[screenplay_title] = screenplay_text
-        screenplay_sentences_dict[screenplay_title] = tokenize_sentences(screenplay_text)
+        screenplays_dict[screenplay_title] = process_text(screenplay_text)
 
-    return pandas.DataFrame({"Title": screenplay_texts_dict.keys(), "Text": screenplay_texts_dict.values(),
-                             "Sentences": screenplay_sentences_dict.values()})
+    return pandas.DataFrame({"Title": screenplays_dict.keys(), "Text": screenplays_dict.values()})
 
 def load_genres():
     info_ds = pandas.read_json("Movie Script Info.json")

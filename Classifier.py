@@ -6,14 +6,12 @@ from time import sleep
 from pathlib import Path
 
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.preprocessing import MultiLabelBinarizer
 
 from Setup import *
-
-# Globals
 
 # Methods
 def load_model():
@@ -53,6 +51,8 @@ def train():
     train_file_paths = [train_directory + file_name for file_name in listdir(train_directory)]
     train_screenplays = pandas.merge(load_screenplays(train_file_paths), load_genres(), on="Title")
 
+    # TODO: IMPLEMENT NLP MODEL
+
     # Creates multi-label binary representation to the screenplays' genres
     binarizer = MultiLabelBinarizer()
     binarizer.fit(train_screenplays["Actual Genres"])
@@ -64,20 +64,17 @@ def train():
 
     # Fits the model to the train sub-collection
     vectorizer = TfidfVectorizer(max_df=0.8, max_features=10000)
-    x_train_tfidf = vectorizer.fit_transform(x_train)
-    x_validation_tfidf = vectorizer.transform(x_validation)
+    x_train = vectorizer.fit_transform(x_train)
+    x_validation = vectorizer.transform(x_validation)
 
-    # Classifies the validation sub-collection
+    # baseline model (accuracy: 0.1084)
     classifier = OneVsRestClassifier(LogisticRegression())
-    classifier.fit(x_train_tfidf, y_train)
-    score = classifier.score(x_validation_tfidf, y_validation)
+    classifier.fit(x_train, y_train)
+    score = classifier.score(x_validation, y_validation)
     print("Accuracy: {:.4f}".format(score))
 
     # Saves model variables to file
     save_model([vectorizer, classifier])
-
-    # accuracies:
-    # baseline model: 0.1084
 
     return [vectorizer, classifier]
 
@@ -93,7 +90,7 @@ def classify(model, test_screenplays):
 
         classifications_dict[test_screenplay["Title"]] = test_percentages
 
-        # prints progress (for GUI to update progress)
+        # Prints progress (for GUI to update progress)
         classifications_complete += 1
         print(classifications_complete)
 
