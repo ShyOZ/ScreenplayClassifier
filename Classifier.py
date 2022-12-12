@@ -1,32 +1,39 @@
 # Imports
-import os, time, pandas, pickle
+import pandas, pickle
 
+from os import listdir
+from time import sleep
 from pathlib import Path
-from sklearn.feature_extraction.text import TfidfVectorizer
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.multiclass import OneVsRestClassifier
 from sklearn.preprocessing import MultiLabelBinarizer
-from Setup import genre_labels
+
+from Setup import *
+
+# Globals
 
 # Methods
-def load_pickle():
+def load_model():
     pickle_path = Path.cwd() / "Classifier/Pickle"
 
     # Validation
     if not Path.exists(pickle_path):
-        return [MultiLabelBinarizer(), TfidfVectorizer(min_df=0, lowercase=False), LogisticRegression()]
+        return train()
 
     # Reads model variables from pickle file
     pickle_file = open(pickle_path, "rb")
-    binarizer, vectorizer, classifier = pickle.load(pickle_file)
+    model = pickle.load(pickle_file)
     pickle_file.close()
 
-    return [binarizer, vectorizer, classifier]
+    return model
 
-def save_pickle(binarizer, vectorizer, classifier):
+def save_model(model):
     # Writes model variables to pickle file
     pickle_file = open(Path.cwd() / "Classifier/Pickle", "wb")
-    pickle.dump([binarizer, vectorizer, classifier], pickle_file)
+    pickle.dump(model, pickle_file)
     pickle_file.close()
 
 def probabilities_to_percentages(probabilities):
@@ -41,26 +48,41 @@ def probabilities_to_percentages(probabilities):
 
     return percentages_dict
 
-def train(train_screenplays):
-    # Loads model variables from file
-    binarizer, vectorizer, classifier = load_pickle()
+def train():
+    train_directory = f"./TrainScreenplays/"
+    train_file_paths = [train_directory + file_name for file_name in listdir(train_directory)]
+    train_screenplays = pandas.merge(load_screenplays(train_file_paths), load_genres(), on="Title")
 
+    # Creates multi-label binary representation to the screenplays' genres
+    binarizer = MultiLabelBinarizer()
     binarizer.fit(train_screenplays["Actual Genres"])
     y = binarizer.transform(train_screenplays["Actual Genres"])
 
-    x_train, x_validation, y_train, y_validation = train_test_split(train_screenplays["Text"], y, test_size=0.2,
-                                                                        random_state=42)
+    # Splits screenplays collection to train and validation
+    x_train, x_validation, y_train, y_validation = train_test_split(train_screenplays["Text"].values, y,
+                                                                    test_size=0.2, random_state=1000)
 
+    # Fits the model to the train sub-collection
+    vectorizer = TfidfVectorizer(max_df=0.8, max_features=10000)
     x_train_tfidf = vectorizer.fit_transform(x_train)
     x_validation_tfidf = vectorizer.transform(x_validation)
 
+    # Classifies the validation sub-collection
+    classifier = OneVsRestClassifier(LogisticRegression())
     classifier.fit(x_train_tfidf, y_train)
-    print("Accuracy:", classifier.score(x_train_tfidf, y_train)) # Accuracy: 0.14350453172205438 - MUST BE IMPROVED!
+    score = classifier.score(x_validation_tfidf, y_validation)
+    print("Accuracy: {:.4f}".format(score))
 
-    return [binarizer, vectorizer, classifier]
+    # Saves model variables to file
+    save_model([vectorizer, classifier])
 
-def classify(model_variables, test_screenplays):
-    binarizer, vectorizer, classifier = model_variables
+    # accuracies:
+    # baseline model: 0.1084
+
+    return [vectorizer, classifier]
+
+def classify(model, test_screenplays):
+    vectorizer, classifier = model
     classifications_dict = {}
     classifications_complete = 0
 
@@ -75,10 +97,7 @@ def classify(model_variables, test_screenplays):
         classifications_complete += 1
         print(classifications_complete)
 
-        time.sleep(0.5) # Sleep for 0.5 seconds
-
-    # Saves classifier's variables to file
-    save_pickle(binarizer, vectorizer, classifier)
+        sleep(0.5) # Sleep for 0.5 seconds
 
     return pandas.DataFrame({"Title": classifications_dict.keys(),
                              "GenrePercentages": classifications_dict.values()})

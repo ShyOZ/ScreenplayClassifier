@@ -1,38 +1,32 @@
 # Imports
-import json, pandas, os, pathlib, sys
+import pandas
+
+from json import load
+from pathlib import Path
+from sys import argv
 
 from Classifier import *
-from TextProcessor import process_text
+from TextProcessor import *
 
 # Globals
-genre_labels = json.load(open("Jsons/Genres.json"))
+genre_labels = load(open("Jsons/Genres.json"))
 
 # Methods
-def read_train_screenplays():
-    screenplays_directory = f"./TrainScreenplays/"
-    file_paths = os.listdir(screenplays_directory)
-    screenplays_dict = {}
+def load_screenplays(file_paths):
+    screenplay_texts_dict = {}
+    screenplay_sentences_dict = {}
 
     # Builds a dictionary of screenplay text by its title
     for file_path in file_paths:
-        screenplay_title = pathlib.Path(file_path).stem
-        screenplay_text = open(f"{screenplays_directory}{file_path}", "r", encoding="utf8").read()
-        screenplays_dict[screenplay_title] = process_text(screenplay_text)
-
-    return pandas.DataFrame({"Title": screenplays_dict.keys(), "Text": screenplays_dict.values()})
-
-def read_test_screenplays(file_paths):
-    screenplays_dict = {}
-
-    # Builds a dictionary of screenplay text by its title
-    for file_path in file_paths:
-        screenplay_title = pathlib.Path(file_path).stem
+        screenplay_title = Path(file_path).stem
         screenplay_text = open(file_path, "r", encoding="utf8").read()
-        screenplays_dict[screenplay_title] = process_text(screenplay_text)
+        screenplay_texts_dict[screenplay_title] = screenplay_text
+        screenplay_sentences_dict[screenplay_title] = tokenize_sentences(screenplay_text)
 
-    return pandas.DataFrame({"Title": screenplays_dict.keys(), "Text": screenplays_dict.values()})
+    return pandas.DataFrame({"Title": screenplay_texts_dict.keys(), "Text": screenplay_texts_dict.values(),
+                             "Sentences": screenplay_sentences_dict.values()})
 
-def read_genres():
+def load_genres():
     info_ds = pandas.read_json("Movie Script Info.json")
     genres_dict = {}
 
@@ -44,20 +38,14 @@ def read_genres():
 
 # Main
 if __name__ == "__main__":
-    # Loads train and test screenplays
-    train_screenplays = pandas.merge(read_train_screenplays(), read_genres(), on="Title")
-    test_screenplays = read_test_screenplays(sys.argv[1:])
-
-    # Loads model variables from pickle and trains them (if necessary)
-    model_variables = train(train_screenplays)
-
-    # Classifies test screenplays
-    classifications = classify(model_variables, test_screenplays)
+    test_screenplays = load_screenplays(argv[1:])
+    model = load_model()
+    classifications = classify(model, test_screenplays)
 
     """
     OUTPUT EXAMPLE:
     Title               |   GenrePercentages        
-    "american psycho"       {"Action"   : 23.67, "Adventure": 12.92 ... }
+    "American Psycho"       {"Action": 22.43, "Adventure": 14.88 ... }
     """
 
     # Prints classifications to process
