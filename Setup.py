@@ -36,8 +36,10 @@ def load_genres():
 # Main
 if __name__ == "__main__":
     test_screenplays = load_screenplays(argv[1:])
-    model = load_model()
-    classifications = classify(model, test_screenplays)
+
+    process_text(test_screenplays["Text"].iloc[0])
+    # model = load_model()
+    # classifications = classify(model, test_screenplays)
 
     """
     OUTPUT EXAMPLE:
@@ -46,4 +48,4 @@ if __name__ == "__main__":
     """
 
     # Prints classifications to process
-    print(classifications.to_json(orient="records", indent=4))
+    # print(classifications.to_json(orient="records", indent=4))
