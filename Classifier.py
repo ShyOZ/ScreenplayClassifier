@@ -1,14 +1,18 @@
 # Imports
+import numpy
 import pandas, pickle
 
 from os import listdir
 from time import sleep
 from pathlib import Path
 
+from skmultilearn.adapt import MLkNN
+from sklearn.ensemble import BaggingClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split, RandomizedSearchCV
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.multiclass import OneVsRestClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import MultiLabelBinarizer
 
 from Setup import *
@@ -34,6 +38,18 @@ def save_model(model):
     pickle.dump(model, pickle_file)
     pickle_file.close()
 
+def getOptimalAmountOfNeighbors(x, t):
+  hyper_params = {"n_neighbors": list(range(1, 20))}
+  grid_search = GridSearchCV(KNeighborsClassifier(n_neighbors=5), hyper_params).fit(x, t)
+
+  return grid_search.best_params_["n_neighbors"]
+def getOptimalAmountOfEstinators(x, t, baseEstimator):
+  hyper_params = {"n_estimators": list(range(10, 21)), "bootstrap": [True, False]}
+  grid_search = GridSearchCV(BaggingClassifier(base_estimator=baseEstimator, random_state=1), hyper_params,
+                            scoring="neg_log_loss").fit(x, t)
+
+  return [grid_search.best_params[key] for key in hyper_params.keys()]
+
 def probabilities_to_percentages(probabilities):
     probabilities_dict = dict(zip(genre_labels, probabilities))
     probabilities_dict = dict(sorted(probabilities_dict.items(), key=lambda item: item[1], reverse=True))
@@ -51,8 +67,6 @@ def train():
     train_file_paths = [train_directory + file_name for file_name in listdir(train_directory)]
     train_screenplays = pandas.merge(load_screenplays(train_file_paths), load_genres(), on="Title")
 
-    # TODO: IMPLEMENT NLP MODEL
-
     # Creates multi-label binary representation to the screenplays' genres
     binarizer = MultiLabelBinarizer()
     binarizer.fit(train_screenplays["Actual Genres"])
@@ -62,13 +76,20 @@ def train():
     x_train, x_validation, y_train, y_validation = train_test_split(train_screenplays["Text"].values, y,
                                                                     test_size=0.2, random_state=1000)
 
-    # Fits the model to the train sub-collection
+    # Extract features from train screenplays
     vectorizer = TfidfVectorizer(max_df=0.8, max_features=10000)
     x_train = vectorizer.fit_transform(x_train)
     x_validation = vectorizer.transform(x_validation)
 
-    # baseline model (accuracy: 0.1084)
-    classifier = OneVsRestClassifier(LogisticRegression())
+    # Classifies the test screenplays
+    '''
+        CLASSIFIERS HISTORY:
+        OneVsRestClassifier(LogisticRegression()) -> 0.1084
+    '''
+
+    # TODO: FIX
+    parameters = {"k": range(1, 20), "s": [0.5, 0.7, 1.0]}
+    classifier = GridSearchCV(MLkNN(), parameters, scoring="f1_macro")
     classifier.fit(x_train, y_train)
     score = classifier.score(x_validation, y_validation)
     print("Accuracy: {:.4f}".format(score))
