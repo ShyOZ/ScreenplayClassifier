@@ -6,10 +6,11 @@ from pathlib import Path
 from sys import argv
 
 from Classifier import *
-from TextProcessor import *
+from ScreenplayProcessor import *
 
 # Globals
 genre_labels = load(open("Jsons/Genres.json"))
+genre_semantic_fields = build_genres_semantic_fields(genre_labels)
 
 # Methods
 def load_screenplays(file_paths):
@@ -19,7 +20,7 @@ def load_screenplays(file_paths):
     for file_path in file_paths:
         screenplay_title = Path(file_path).stem
         screenplay_text = open(file_path, "r", encoding="utf8").read()
-        screenplays_dict[screenplay_title] = process_text(screenplay_text)
+        screenplays_dict[screenplay_title] = process_screenplay(screenplay_text)
 
     return pandas.DataFrame({"Title": screenplays_dict.keys(), "Text": screenplays_dict.values()})
 
