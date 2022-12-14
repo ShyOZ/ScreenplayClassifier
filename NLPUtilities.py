@@ -1,7 +1,6 @@
 # Imports
 import nltk, re
 
-from nltk import WordNetLemmatizer
 from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize, word_tokenize
 
@@ -27,12 +26,14 @@ def get_parts_of_speech(text):
     pos_dict = {}
 
     # Organizes all parts of speech in dictionary
-    for pos_tag in pos_tags:
+    for pos_tag in ["NOUN", "VERB", "ADJ"]:
         pos_dict[pos_tag] = set(word for (word, tag) in words if tag == pos_tag)
+
+    print(pos_dict)
 
     return pos_dict
 
 def lemmatize_words(words):
-    lemmatizer = WordNetLemmatizer()
+    lemmatizer = nltk.WordNetLemmatizer()
 
     return set(lemmatizer.lemmatize(word) for word in words)

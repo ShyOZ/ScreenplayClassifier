@@ -1,24 +1,24 @@
 # Imports
+import nltk
+
 from nltk.corpus import wordnet
 
-import Setup
 from NLPUtilities import *
 
+# Globals
+genres_synonyms_dict = None
+
 # Methods
-def build_semantic_field(word):
-    definitions = set(clean_text(synset.definition()) for synset in wordnet.synsets(word))
-    semantic_field = []
+def get_synonyms(word):
+    synonyms = []
 
-    # Builds the word's semantic field by its definitions
-    for definition in definitions:
-        definition_pos_dict = get_parts_of_speech(definition)
-        for words_collection in definition_pos_dict.values():
-            semantic_field.extend(lemmatize_words(words_collection))
+    for synset in wordnet.synsets(word):
+        synonyms.extend([lemma.name() for lemma in synset.lemmas()])
 
-    return semantic_field
+    return set(synonyms)
 
-def build_genres_semantic_fields(genre_labels):
-    semantic_fields_dict = {}
+def get_genres_synonyms(genre_labels):
+    synonyms_dict = {}
 
     # Builds a semantic field to each genre and organizes in dictionary
     for genre_label in genre_labels:
@@ -27,8 +27,8 @@ def build_genres_semantic_fields(genre_labels):
 
         # Combines semantic fields from each word
         for word in get_words(genre_name):
-            genre_semantic_fields.extend(build_semantic_field(word))
+            genre_semantic_fields.extend(get_synonyms(word))
 
-        semantic_fields_dict[genre_label] = set(genre_semantic_fields)
+        synonyms_dict[genre_label] = set(genre_semantic_fields)
 
-    return semantic_fields_dict
+    return synonyms_dict

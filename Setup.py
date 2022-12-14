@@ -1,16 +1,12 @@
 # Imports
-import pandas
+import pandas, json, pathlib, sys
 
-from json import load
-from pathlib import Path
-from sys import argv
+import ScreenplayProcessor, WordnetHandler, NLPUtilities
 
 from Classifier import *
-from ScreenplayProcessor import *
 
 # Globals
-genre_labels = load(open("Jsons/Genres.json"))
-genre_semantic_fields = build_genres_semantic_fields(genre_labels)
+genre_labels = None
 
 # Methods
 def load_screenplays(file_paths):
@@ -18,9 +14,9 @@ def load_screenplays(file_paths):
 
     # Builds a dictionary of screenplay text by its title
     for file_path in file_paths:
-        screenplay_title = Path(file_path).stem
+        screenplay_title = pathlib.Path(file_path).stem
         screenplay_text = open(file_path, "r", encoding="utf8").read()
-        screenplays_dict[screenplay_title] = process_screenplay(screenplay_text)
+        screenplays_dict[screenplay_title] = screenplay_text
 
     return pandas.DataFrame({"Title": screenplays_dict.keys(), "Text": screenplays_dict.values()})
 
@@ -34,18 +30,28 @@ def load_genres():
 
     return pandas.DataFrame({"Title": genres_dict.keys(), "Actual Genres": genres_dict.values()})
 
+def init_globals():
+    genre_labels = json.load(open("Jsons/Genres.json"))
+
+    WordnetHandler.genres_synonyms_dict = WordnetHandler.get_genres_synonyms(genre_labels)
+
+
 # Main
 if __name__ == "__main__":
-    test_screenplays = load_screenplays(argv[1:])
+    # Initializes all global variables
+    init_globals()
 
-    model = load_model()
-    classifications = classify(model, test_screenplays)
+    # Loads and pre-processes screenplays to classify
+    screenplays = ScreenplayProcessor.process_screenplays(load_screenplays(sys.argv[1:]))
+
+    # Classifies the screenplays
+    classifications = classify(screenplays)
+
+    # Prints classifications to process
+    print(classifications.to_json(orient="records", indent=4))
 
     """
     OUTPUT EXAMPLE:
     Title               |   GenrePercentages        
     "American Psycho"       {"Action": 22.43, "Adventure": 14.88 ... }
     """
-
-    # Prints classifications to process
-    print(classifications.to_json(orient="records", indent=4))
