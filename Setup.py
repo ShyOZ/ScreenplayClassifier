@@ -1,7 +1,7 @@
 # Imports
 import pandas, json, pathlib, sys
 
-import ScreenplayProcessor, WordnetHandler, NLPUtilities
+from ScreenplayProcessor import process_screenplays
 
 from Classifier import *
 
@@ -33,16 +33,13 @@ def load_genres():
 def init_globals():
     genre_labels = json.load(open("Jsons/Genres.json"))
 
-    WordnetHandler.genres_synonyms_dict = WordnetHandler.get_genres_synonyms(genre_labels)
-
-
 # Main
 if __name__ == "__main__":
     # Initializes all global variables
     init_globals()
 
     # Loads and pre-processes screenplays to classify
-    screenplays = ScreenplayProcessor.process_screenplays(load_screenplays(sys.argv[1:]))
+    screenplays = process_screenplays(load_screenplays(sys.argv[1:]))
 
     # Classifies the screenplays
     classifications = classify(screenplays)
