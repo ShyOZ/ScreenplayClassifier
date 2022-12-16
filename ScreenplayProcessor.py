@@ -1,9 +1,25 @@
 # Imports
-import pandas, spacy, textblob
+import re, spacy, textblob
 
-from nltk.tokenize import sent_tokenize
+from nltk import sent_tokenize
 
 # Methods
+def annotate_screenplay(screenplay_text):
+    screenplay_lines = screenplay_text.splitlines()
+    regexes_dict = {"Headings": r"\b((?:INT|EXT)\..*\S)[^\S\n]+[a-zA-Z]*\d+\n(?s:(.+?)(?=\b(?:EXT|INT)\.|\Z))",
+                    "Actions": r"",
+                    "Characters": r"(?:([A-Z]+ *[A-Z]+)\n).*?(?=$|([A-Z]+ *[A-Z]+)\n)",
+                    "Dialogues": r"",
+                    "Parentheticals": r"",
+                    "Transitions": r""}
+    annotations_dict = {}
+
+    # Extracts each screenplay element and organizes in dictionary
+    for name, regex in regexes_dict:
+        annotations_dict[name] = re.findall(regex, screenplay_lines)
+
+    return annotations_dict
+
 def get_entities(nlp_info):
     entities_labels = set(entity.label_ for entity in nlp_info.ents)
     entities_dict = {}
@@ -33,13 +49,6 @@ def get_sentiment(text):
 
     return list(sentiments_dict.keys())[0]
 
-def get_emotions(text):
-    emotions_dict = {"Happiness": 0, "Sadness": 0, "Fear": 0, "Disgust": 0, "Anger": 0, "Contempt": 0, "Surprise": 0}
-
-    # TODO: COMPLETE
-
-    return emotions_dict
-
 def process_screenplays(screenplays):
     nlp = spacy.load("en_core_web_sm")
 
@@ -48,8 +57,8 @@ def process_screenplays(screenplays):
         nlp_info = nlp(screenplay["Text"])
 
         screenplay["Entities"] = get_entities(nlp_info)
-        screenplay["Sentiment"] = get_sentiment(screenplay["Text"])
-        screenplay["Emotions"] = get_emotions(screenplay["Text"])
+        # screenplay["Sentiment"] = get_sentiment(screenplay["Text"])
+        print(screenplay["Title"], screenplay["Entities"])
 
     # Removes the no longer required text feature
     screenplays.drop("Text", axis=1)

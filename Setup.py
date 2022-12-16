@@ -6,7 +6,7 @@ from ScreenplayProcessor import process_screenplays
 from Classifier import *
 
 # Globals
-genre_labels = None
+genre_labels = json.load(open("Jsons/Genres.json"))
 
 # Methods
 def load_screenplays(file_paths):
@@ -30,14 +30,8 @@ def load_genres():
 
     return pandas.DataFrame({"Title": genres_dict.keys(), "Actual Genres": genres_dict.values()})
 
-def init_globals():
-    genre_labels = json.load(open("Jsons/Genres.json"))
-
 # Main
 if __name__ == "__main__":
-    # Initializes all global variables
-    init_globals()
-
     # Loads and pre-processes screenplays to classify
     screenplays = process_screenplays(load_screenplays(sys.argv[1:]))
 
