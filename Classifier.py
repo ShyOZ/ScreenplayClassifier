@@ -52,10 +52,10 @@ def train():
 
     # Creates multi-label binary representation to the screenplays' genres
     binarizer = MultiLabelBinarizer()
-    y = binarizer.fit_transform(train_screenplays["Actual Genres"])
+    t = binarizer.fit_transform(train_screenplays["Actual Genres"])
 
-    # Splits screenplays collection to train and validation
-    x_train, x_validation, y_train, y_validation = train_test_split(train_screenplays["Text"].values, y,
+    # Splits train screenplays into features (x) and targets (t), and splitting x into train and validation
+    x_train, x_validation, y_train, y_validation = train_test_split(train_screenplays["Text"], t,
                                                                     test_size=0.2, random_state=1000)
 
     # Extracts features from train screenplays

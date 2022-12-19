@@ -18,7 +18,11 @@ def load_screenplays(file_paths):
         screenplay_text = open(file_path, "r", encoding="utf8").read()
         screenplays_dict[screenplay_title] = screenplay_text
 
-    return pandas.DataFrame({"Title": screenplays_dict.keys(), "Text": screenplays_dict.values()})
+    # Builds a dataframe from the columns dictionary
+    screenplays = pandas.DataFrame({"Title": screenplays_dict.keys(), "Text": screenplays_dict.values()})
+    screenplays = process_screenplays(screenplays)
+
+    return screenplays
 
 def load_genres():
     info_ds = pandas.read_json("Movie Script Info.json")
@@ -33,7 +37,7 @@ def load_genres():
 # Main
 if __name__ == "__main__":
     # Loads and pre-processes screenplays to classify
-    screenplays = process_screenplays(load_screenplays(sys.argv[1:]))
+    screenplays = load_screenplays(sys.argv[1:])
 
     # Classifies the screenplays
     classifications = classify(screenplays)

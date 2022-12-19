@@ -1,66 +1,37 @@
 # Imports
-import re, spacy, textblob
+import re, pandas, transformers
 
-from nltk import sent_tokenize
+# Globals
+emotion_pipeline = transformers.pipeline("sentiment-analysis", model="arpanghoshal/EmoRoBERTa")
+emotion_labels = ["Admiration", "Amusement", "Anger", "Annoyance", "Approval", "Caring", "Confusion",
+                  "Curiosity", "Desire", "Disappointment", "Disapproval", "Disgust", "Embarrassment", "Excitement",
+                  "Fear", "Gratitude", "Grief", "Joy", "Love", "Nervousness", "Optimism",
+                  "Pride", "Realization", "Relief", "Remorse", "Sadness", "Surprise"]
 
 # Methods
-def annotate_screenplay(screenplay_text):
-    screenplay_lines = screenplay_text.splitlines()
-    regexes_dict = {"Headings": r"\b((?:INT|EXT)\..*\S)[^\S\n]+[a-zA-Z]*\d+\n(?s:(.+?)(?=\b(?:EXT|INT)\.|\Z))",
-                    "Actions": r"",
-                    "Characters": r"(?:([A-Z]+ *[A-Z]+)\n).*?(?=$|([A-Z]+ *[A-Z]+)\n)",
-                    "Dialogues": r"",
-                    "Parentheticals": r"",
-                    "Transitions": r""}
-    annotations_dict = {}
+def get_emotions(text):
+    emotions_dict = dict(zip(emotion_labels, [0 for label in emotion_labels]))
+    emotions_scores = emotion_pipeline(text)
 
-    # Extracts each screenplay element and organizes in dictionary
-    for name, regex in regexes_dict:
-        annotations_dict[name] = re.findall(regex, screenplay_lines)
+    # Organizes emotions and their scores in dictionary
+    for emotion in emotions_scores:
+        emotions_dict[emotion["label"].capitalize()] = emotion["score"]
 
-    return annotations_dict
-
-def get_entities(nlp_info):
-    entities_labels = set(entity.label_ for entity in nlp_info.ents)
-    entities_dict = {}
-
-    # Organizes entities in dictionary
-    for entitiy_label in entities_labels:
-        entities_dict[entitiy_label] = [entity.text for entity in nlp_info.ents if entity.label_ == entitiy_label]
-
-    return entities_dict
-
-def get_sentiment(text):
-    sentences = sent_tokenize(text)
-    sentiments_dict = {"Positive": 0, "Neutral": 0, "Negative": 0}
-
-    # Determines text's sentiment by the largest subgroup in it: Negative, Neutral or Positive
-    for sentence in sentences:
-        sentiment_polarity = textblob.TextBlob(sentence).sentiment.polarity
-
-        if sentiment_polarity < 0:
-            sentiments_dict["Negative"] += 1
-        elif sentiment_polarity == 0:
-            sentiments_dict["Neutral"] += 1
-        else:
-            sentiments_dict["Positive"] += 1
-
-    sentiments_dict = dict(sorted(sentiments_dict.items(), key=lambda item: item[1], reverse=True))
-
-    return list(sentiments_dict.keys())[0]
+    return emotions_dict
 
 def process_screenplays(screenplays):
-    nlp = spacy.load("en_core_web_sm")
+    # TODO: FIX (something when loading train screenplays fucks up)
+    screenplays_emotions = [get_emotions(screenplay["Text"]) for offset, screenplay in screenplays.iterrows()]
+    emotions_dict = dict(zip(screenplays_emotions[0].keys(), [[] for key in screenplays_emotions[0].keys()]))
 
-    # Extracts features from the screenplay text
-    for offset, screenplay in screenplays.iterrows():
-        nlp_info = nlp(screenplay["Text"])
+    # Organizes emotions in lists
+    for screenplay_emotions in screenplays_emotions:
+        for emotion_label, emotion_score in screenplay_emotions.items():
+            emotions_dict[emotion_label].append(emotion_score)
 
-        screenplay["Entities"] = get_entities(nlp_info)
-        # screenplay["Sentiment"] = get_sentiment(screenplay["Text"])
-        print(screenplay["Title"], screenplay["Entities"])
-
-    # Removes the no longer required text feature
+    # Removes the text column and adds a column for each emotion
     screenplays.drop("Text", axis=1)
+    for emotion_label, emotion_scores in emotions_dict.items():
+        screenplays[emotion_label] = emotion_scores
 
     return screenplays
