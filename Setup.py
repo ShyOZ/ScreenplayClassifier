@@ -1,8 +1,8 @@
 # Imports
 import pandas, json, pathlib, sys
 
+import ScreenplayProcessor
 from ScreenplayProcessor import process_screenplays
-
 from Classifier import *
 
 # Globals
@@ -20,9 +20,8 @@ def load_screenplays(file_paths):
 
     # Builds a dataframe from the columns dictionary
     screenplays = pandas.DataFrame({"Title": screenplays_dict.keys(), "Text": screenplays_dict.values()})
-    screenplays = process_screenplays(screenplays)
 
-    return screenplays
+    return process_screenplays(screenplays)
 
 def load_genres():
     info_ds = pandas.read_json("Movie Script Info.json")
@@ -37,13 +36,16 @@ def load_genres():
 # Main
 if __name__ == "__main__":
     # Loads and pre-processes screenplays to classify
-    screenplays = load_screenplays(sys.argv[1:])
+    screenplay_text = open("./TrainScreenplays/9.txt").read()
+
+    print(ScreenplayProcessor.get_screenplay_emotions(screenplay_text))
+    # screenplays = load_screenplays(sys.argv[1:])
 
     # Classifies the screenplays
-    classifications = classify(screenplays)
+    # classifications = classify(screenplays)
 
     # Prints classifications to process
-    print(classifications.to_json(orient="records", indent=4))
+    # print(classifications.to_json(orient="records", indent=4))
 
     """
     OUTPUT EXAMPLE:
