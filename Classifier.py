@@ -1,5 +1,5 @@
 # Imports
-import pandas, pickle, os, time, pathlib
+import pandas, pickle, os, time, pathlib, tqdm
 
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.neighbors import KNeighborsClassifier
@@ -14,9 +14,9 @@ from Setup import *
 # Methods
 def load_model():
     # Validates existence of pickle file
-    pickle_path = pathlib.Path.cwd() / "Classifier/Pickle"
+    pickle_path = pathlib.Path.cwd() / "Classifier/Model.pkl"
     if not pathlib.Path.exists(pickle_path):
-        return train()
+        return create_model()
 
     # Reads model variables from pickle file
     pickle_file = open(pickle_path, "rb")
@@ -27,7 +27,7 @@ def load_model():
 
 def save_model(model):
     # Writes model variables to pickle file
-    pickle_file = open(pathlib.Path.cwd() / "Classifier/Pickle", "wb")
+    pickle_file = open(pathlib.Path.cwd() / "Classifier/Model.pkl", "wb")
     pickle.dump(model, pickle_file)
     pickle_file.close()
 
@@ -44,41 +44,54 @@ def probabilities_to_percentages(probabilities):
 
     return percentages_dict
 
-def train():
-    # Loads train screenplays
-    train_directory = f"./TrainScreenplays/"
-    train_file_paths = [train_directory + file_name for file_name in os.listdir(train_directory)]
-    train_screenplays = pandas.merge(load_screenplays(train_file_paths), load_genres(), on="Title")
+def create_model():
+    train_directory, train_pickle_file = f"./TrainScreenplays/", f"./Classifier/Screenplays.pkl"
+    # Validates existence of pickle file
+    pickle_path = pathlib.Path.cwd() / train_pickle_file
+    if pathlib.Path.exists(pickle_path):
+        train_screenplays = pandas.read_pickle(train_pickle_file)
+    else:
+        # Loads train screenplays
+        print("Loading train screenplays...")
+        start_time = time.time()
 
-    # Creates multi-label binary representation to the screenplays' genres
-    binarizer = MultiLabelBinarizer()
-    t = binarizer.fit_transform(train_screenplays["Actual Genres"])
+        train_file_paths = [train_directory + file_name for file_name in os.listdir(train_directory)]
+        train_screenplays = pandas.merge(load_screenplays(train_file_paths), load_genres(), on="Title")
 
-    # Splits train screenplays into features (x) and targets (t), and splitting x into train and validation
-    x_train, x_validation, y_train, y_validation = train_test_split(train_screenplays["Text"], t,
-                                                                    test_size=0.2, random_state=1000)
+        end_time = time.time()
+        print(f"Loading complete [Total: {end_time - start_time} seconds]")
 
-    # Extracts features from train screenplays
-    vectorizer = TfidfVectorizer(max_df=0.8, ngram_range=(1, 2))
-    x_train = vectorizer.fit_transform(x_train)
-    x_validation = vectorizer.transform(x_validation)
+        train_screenplays.to_pickle(train_pickle_file)
 
-    '''
-        CLASSIFIERS HISTORY:
-        OneVsRestClassifier(LogisticRegression()) -> 0.1205
-    '''
-
-    # TODO: Use feature-selection and ensembles with SGD/KNN classifiers
-    # Classifies the test screenplays
-    classifier = OneVsRestClassifier(LogisticRegression())
-    classifier.fit(x_train, y_train)
-    score = classifier.score(x_validation, y_validation)
-    print("Accuracy: {:.4f}".format(score))
-
-    # Saves model variables to file
-    # save_model([vectorizer, classifier])
-
-    return [vectorizer, classifier]
+    # # Creates multi-label binary representation to the screenplays' genres
+    # binarizer = MultiLabelBinarizer()
+    # t = binarizer.fit_transform(train_screenplays["Actual Genres"])
+    #
+    # # Splits train screenplays into features (x) and targets (t), and splitting x into train and validation
+    # x_train, x_validation, y_train, y_validation = train_test_split(train_screenplays["Text"], t,
+    #                                                                 test_size=0.2, random_state=1000)
+    #
+    # # Extracts features from train screenplays
+    # vectorizer = TfidfVectorizer(max_df=0.8, ngram_range=(1, 2))
+    # x_train = vectorizer.fit_transform(x_train)
+    # x_validation = vectorizer.transform(x_validation)
+    #
+    # '''
+    #     CLASSIFIERS HISTORY:
+    #     OneVsRestClassifier(LogisticRegression()) -> 0.1205
+    # '''
+    #
+    # # TODO: Use feature-selection and ensembles with SGD/KNN classifiers
+    # # Classifies the test screenplays
+    # classifier = OneVsRestClassifier(LogisticRegression())
+    # classifier.fit(x_train, y_train)
+    # score = classifier.score(x_validation, y_validation)
+    # print("Accuracy: {:.4f}".format(score))
+    #
+    # # Saves model variables to file
+    # # save_model([vectorizer, classifier])
+    #
+    # return [vectorizer, classifier]
 
 def classify(screenplays):
     # Loads classification model

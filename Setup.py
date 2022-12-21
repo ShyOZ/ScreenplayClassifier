@@ -36,9 +36,16 @@ def load_genres():
 # Main
 if __name__ == "__main__":
     # Loads and pre-processes screenplays to classify
-    screenplays = load_screenplays(sys.argv[1:])
+    print("Loading test screenplays...")
+    start_time = time.time()
+
+    screenplays = load_screenplays(sys.argv[1:]) # 1 screenplay takes ~2.5 minutes!!
+
+    end_time = time.time()
+    print(f"Loading complete [Total: {end_time - start_time} seconds]")
 
     # Classifies the screenplays
+    # create_model()
     # classifications = classify(screenplays)
 
     # Prints classifications to process

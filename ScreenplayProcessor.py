@@ -35,13 +35,15 @@ def get_emotions(text):
     return emotions_dict
 
 def process_screenplays(screenplays):
-    emotion_records = [get_screenplay_emotions(screenplay["Text"]) for _, screenplay in screenplays.iterrows()]
+    emotion_records = [get_screenplay_emotions(screenplay["Text"]) for offset, screenplay in screenplays.iterrows()]
 
     # Adds column for each emotion to dataframe
     for emotion_label in emotion_labels:
         screenplays[emotion_label] = [emotions_record[emotion_label] for emotions_record in emotion_records]
-    screenplays.drop("Text", inplace=True, axis=1)
 
-    print(screenplays)
+    # TODO: FURTHER FEATURE EXTRACTION (IF NECESSARY)
+
+    # Drops the no longer required Text column
+    screenplays.drop("Text", inplace=True, axis=1)
 
     return screenplays
