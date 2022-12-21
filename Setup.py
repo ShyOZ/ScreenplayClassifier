@@ -36,10 +36,7 @@ def load_genres():
 # Main
 if __name__ == "__main__":
     # Loads and pre-processes screenplays to classify
-    screenplay_text = open("./TrainScreenplays/9.txt").read()
-
-    print(ScreenplayProcessor.get_screenplay_emotions(screenplay_text))
-    # screenplays = load_screenplays(sys.argv[1:])
+    screenplays = load_screenplays(sys.argv[1:])
 
     # Classifies the screenplays
     # classifications = classify(screenplays)
