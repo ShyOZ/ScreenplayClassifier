@@ -45,8 +45,8 @@ def probabilities_to_percentages(probabilities):
     return percentages_dict
 
 def create_model():
+    # Loads train screenplays
     train_directory, train_pickle_file = f"./TrainScreenplays/", f"./Classifier/Screenplays.pkl"
-    # Validates existence of pickle file
     pickle_path = pathlib.Path.cwd() / train_pickle_file
     if pathlib.Path.exists(pickle_path):
         train_screenplays = pandas.read_pickle(train_pickle_file)

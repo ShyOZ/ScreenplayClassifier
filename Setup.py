@@ -1,7 +1,7 @@
 # Imports
 import pandas, json, pathlib, sys
 
-import ScreenplayProcessor
+from concurrent.futures import ThreadPoolExecutor
 from ScreenplayProcessor import process_screenplays
 from Classifier import *
 
@@ -13,15 +13,21 @@ def load_screenplays(file_paths):
     screenplays_dict = {}
 
     # Builds a dictionary of screenplay text by its title
-    for file_path in file_paths:
-        screenplay_title = pathlib.Path(file_path).stem
-        screenplay_text = open(file_path, "r", encoding="utf8").read()
-        screenplays_dict[screenplay_title] = screenplay_text
+    with ThreadPoolExecutor() as executor:
+        for file_path in file_paths:
+            screenplay_record = executor.submit(load_screenplay, file_path).result()
+            screenplays_dict[screenplay_record[0]] = screenplay_record[1]
 
     # Builds a dataframe from the columns dictionary
     screenplays = pandas.DataFrame({"Title": screenplays_dict.keys(), "Text": screenplays_dict.values()})
 
     return process_screenplays(screenplays)
+
+def load_screenplay(file_path):
+    screenplay_title = pathlib.Path(file_path).stem
+    screenplay_text = open(file_path, "r", encoding="utf8").read()
+
+    return screenplay_title, screenplay_text
 
 def load_genres():
     info_ds = pandas.read_json("Movie Script Info.json")
@@ -39,7 +45,7 @@ if __name__ == "__main__":
     print("Loading test screenplays...")
     start_time = time.time()
 
-    screenplays = load_screenplays(sys.argv[1:]) # 1 screenplay takes ~2.5 minutes!!
+    screenplays = load_screenplays(sys.argv[1:]) # 50.778 seconds
 
     end_time = time.time()
     print(f"Loading complete [Total: {end_time - start_time} seconds]")
