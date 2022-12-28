@@ -1,7 +1,9 @@
 # Imports
 import pandas, json, pathlib, sys
 
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from tqdm import tqdm
+
 from ScreenplayProcessor import extract_features
 from Classifier import *
 
@@ -12,11 +14,15 @@ genre_labels = json.load(open("Jsons/Genres.json"))
 def load_screenplays(file_paths):
     screenplay_records = []
 
-    # Builds a dictionary of screenplay text by its title
-    with ThreadPoolExecutor() as executor:
-        for file_path in file_paths:
-            screenplay_record = executor.submit(load_screenplay, file_path).result()
-            screenplay_records.append(screenplay_record)
+    print("Loading screenplays...")
+    start_time = time.time()
+
+    # Builds a screenplay record for each file path
+    with ThreadPoolExecutor(max_workers=100) as executor:
+        screenplay_records = executor.map(load_screenplay, file_paths)
+
+    end_time = time.time()
+    print(f"Screenplays load complete [Total: {end_time - start_time} seconds].")
 
     return pandas.DataFrame(screenplay_records)
 
@@ -39,14 +45,9 @@ def load_genres():
 # Main
 if __name__ == "__main__":
     # Loads and pre-processes screenplays to classify
-    print("Loading test screenplays...")
-    start_time = time.time()
+    screenplays = load_screenplays(sys.argv[1:])
 
-    screenplays = load_screenplays(sys.argv[1:]) # 50.778 seconds
-
-    end_time = time.time()
-    print(f"Loading complete [Total: {end_time - start_time} seconds]")
-
+    print(screenplays)
     # Classifies the screenplays
     # create_model()
     # classifications = classify(screenplays)

@@ -1,6 +1,7 @@
 # Imports
-import pandas, pickle, os, time, pathlib, tqdm
+import pandas, pickle, os, time, pathlib
 
+from tqdm import tqdm
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
@@ -52,14 +53,8 @@ def create_model():
         train_screenplays = pandas.read_pickle(train_pickle_file)
     else:
         # Loads train screenplays
-        print("Loading train screenplays...")
-        start_time = time.time()
-
         train_file_paths = [train_directory + file_name for file_name in os.listdir(train_directory)]
         train_screenplays = pandas.merge(load_screenplays(train_file_paths), load_genres(), on="Title")
-
-        end_time = time.time()
-        print(f"Loading complete [Total: {end_time - start_time} seconds]")
 
         train_screenplays.to_pickle(train_pickle_file)
 
