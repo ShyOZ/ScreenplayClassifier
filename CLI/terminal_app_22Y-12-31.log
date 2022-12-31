@@ -1,0 +1,3 @@
+02:23:30 | DEBUG | username=b'RanYunger', password=b'RY12696', user=None
+02:25:31 | DEBUG | username=b'RanYunger', password=b'RY12696', user=None
+02:46:25 | DEBUG | username='RanYunger', password='RY12696', user=User(username='RanYunger', password='RY12696', role=<Role.Admin: 2>)

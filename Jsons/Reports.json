@@ -1,0 +1,114 @@
+[
+  {
+    "Owner": {
+      "Username": "RanYunger",
+      "Role": 2,
+      "Password": "RY12696"
+    },
+    "Screenplay": {
+      "ID": 1,
+      "Title": "Lord of the Rings: Fellowship of the Ring",
+      "GenrePercentages": {
+        "Action": 20.0,
+        "Adventure": 10.0,
+        "Comedy": 10.6,
+        "Crime": 19.0,
+        "Drama": 30.4,
+        "Family": 0.0,
+        "Fantasy": 0.0,
+        "Horror": 5.0,
+        "Romance": 2.4,
+        "SciFi": 2.6,
+        "Thriller": 0.0,
+        "War": 0.0
+      },
+      "ActualGenre": "Fantasy",
+      "ActualSubGenre1": "Adventure",
+      "ActualSubGenre2": "Action"
+    }
+  },
+  {
+    "Owner": {
+      "Username": "RanYunger",
+      "Role": 2,
+      "Password": "RY12696"
+    },
+    "Screenplay": {
+      "ID": 2,
+      "Title": "Lord of the Rings: The Two Towers",
+      "GenrePercentages": {
+        "Action": 25.0,
+        "Adventure": 15.0,
+        "Comedy": 10.6,
+        "Crime": 19.0,
+        "Drama": 30.4,
+        "Family": 0.0,
+        "Fantasy": 0.0,
+        "Horror": 5.0,
+        "Romance": 2.4,
+        "SciFi": 2.6,
+        "Thriller": 0.0,
+        "War": 0.0
+      },
+      "ActualGenre": "Fantasy",
+      "ActualSubGenre1": "Adventure",
+      "ActualSubGenre2": "War"
+    }
+  },
+  {
+    "Owner": {
+      "Username": "ShyOhevZion",
+      "Role": 1,
+      "Password": "SHZ101098"
+    },
+    "Screenplay": {
+      "ID": 3,
+      "Title": "Lord of the Rings: The Return of the King",
+      "GenrePercentages": {
+        "Action": 0.0,
+        "Adventure": 30.0,
+        "Comedy": 10.6,
+        "Crime": 19.0,
+        "Drama": 30.4,
+        "Family": 0.0,
+        "Fantasy": 0.0,
+        "Horror": 5.0,
+        "Romance": 2.4,
+        "SciFi": 2.6,
+        "Thriller": 0.0,
+        "War": 0.0
+      },
+      "ActualGenre": "Fantasy",
+      "ActualSubGenre1": "Adventure",
+      "ActualSubGenre2": "War"
+    }
+  },
+  {
+    "Owner": {
+      "Username": "RanYunger",
+      "Role": 2,
+      "Password": "RY12696"
+    },
+    "Screenplay": {
+      "ID": 4,
+      "Title": "Saw",
+      "GenrePercentages": {
+        "Action": 20.0,
+        "Adventure": 10.0,
+        "Comedy": 10.6,
+        "Crime": 19.0,
+        "Drama": 30.4,
+        "Family": 0.0,
+        "Fantasy": 0.0,
+        "Horror": 5.0,
+        "Romance": 2.4,
+        "SciFi": 2.6,
+        "Thriller": 0.0,
+        "War": 0.0
+      },
+      "ActualGenre": "Horror",
+      "ActualSubGenre1": "Crime",
+      "ActualSubGenre2": "Thriller"
+    }
+  }
+]

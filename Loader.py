@@ -10,6 +10,7 @@ from Classifier import *
 # Globals
 genre_labels = json.load(open("Jsons/Genres.json"))
 
+
 # Methods
 def load_screenplays(file_paths):
     screenplay_records = []
@@ -26,11 +27,13 @@ def load_screenplays(file_paths):
 
     return pandas.DataFrame(screenplay_records)
 
+
 def load_screenplay(file_path):
     screenplay_title = pathlib.Path(file_path).stem
     screenplay_text = open(file_path, "r", encoding="utf8").read()
 
     return extract_features(screenplay_title, screenplay_text)
+
 
 def load_genres():
     info_ds = pandas.read_json("Movie Script Info.json")
@@ -41,6 +44,7 @@ def load_genres():
         genres_dict[info["title"]] = info["genres"]
 
     return pandas.DataFrame({"Title": genres_dict.keys(), "Actual Genres": genres_dict.values()})
+
 
 # Main
 if __name__ == "__main__":
