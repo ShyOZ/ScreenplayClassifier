@@ -1,13 +1,17 @@
 # Imports
 import re, pandas
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
+from spacy import load
 from nltk import sent_tokenize
 from tqdm import tqdm
 from transformers import pipeline
 
-emotion_pipeline = pipeline("text-classification",model='bhadresh-savani/distilbert-base-uncased-emotion', top_k=None)
+# Globals
+EMOTIONS = pipeline("text-classification",model='bhadresh-savani/distilbert-base-uncased-emotion', top_k=None)
 emotion_labels = ["Sadness", "Anger", "Fear", "Joy", "Surprise", "Love"]
+
+NER = load("en_core_web_sm")
 
 # Methods
 def get_screenplay_emotions(screenplay_text):
@@ -31,7 +35,7 @@ def get_screenplay_emotions(screenplay_text):
     return screenplay_emotions_dict
 
 def get_sentence_emotions(sentence):
-    emotions_scores = sum(emotion_pipeline(sentence), []) # Flattens the list
+    emotions_scores = sum(EMOTIONS(sentence), []) # Flattens the list
     emotions_dict = {}
 
     # Organizes emotions and their scores in dictionary
@@ -40,12 +44,23 @@ def get_sentence_emotions(sentence):
 
     return emotions_dict
 
+def get_screenplay_entities(screenplay_text):
+    entities = NER(screenplay_text).ents
+    entity_labels = set([entity.label_ for entity in entities])
+    entities_dict = {}
+
+    # Organizes entities in dictionary
+    for entity_label in entity_labels:
+        entities_dict[entity_label] = set([entity.text for entity in entities if entity.label_ == entity_label])
+
+    return entities_dict
+
 def extract_features(screenplay_title, screenplay_text):
     features_dict = {"Title": screenplay_title}
 
     # TODO: FURTHER FEATURE EXTRACTION (IF NECESSARY)
     features_dict.update(get_screenplay_emotions(screenplay_text))
-    # features_dict.update(...)
+    features_dict.update(get_screenplay_entities(screenplay_text))
 
     return features_dict
 
