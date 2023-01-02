@@ -58,35 +58,36 @@ def create_model():
 
         train_screenplays.to_pickle(train_pickle_file)
 
-    # # Creates multi-label binary representation to the screenplays' genres
-    # binarizer = MultiLabelBinarizer()
-    # t = binarizer.fit_transform(train_screenplays["Actual Genres"])
-    #
-    # # Splits train screenplays into features (x) and targets (t), and splitting x into train and validation
-    # x_train, x_validation, y_train, y_validation = train_test_split(train_screenplays["Text"], t,
-    #                                                                 test_size=0.2, random_state=1000)
-    #
-    # # Extracts features from train screenplays
-    # vectorizer = TfidfVectorizer(max_df=0.8, ngram_range=(1, 2))
-    # x_train = vectorizer.fit_transform(x_train)
-    # x_validation = vectorizer.transform(x_validation)
-    #
-    # '''
-    #     CLASSIFIERS HISTORY:
-    #     OneVsRestClassifier(LogisticRegression()) -> 0.1205
-    # '''
-    #
-    # # TODO: Use feature-selection and ensembles with SGD/KNN classifiers
-    # # Classifies the test screenplays
-    # classifier = OneVsRestClassifier(LogisticRegression())
-    # classifier.fit(x_train, y_train)
-    # score = classifier.score(x_validation, y_validation)
-    # print("Accuracy: {:.4f}".format(score))
-    #
-    # # Saves model variables to file
-    # # save_model([vectorizer, classifier])
-    #
-    # return [vectorizer, classifier]
+    # Creates multi-label binary representation to the screenplays' genres
+    binarizer = MultiLabelBinarizer()
+    x = train_screenplays.drop("Actual Genres", axis=1)
+    t = binarizer.fit_transform(train_screenplays["Actual Genres"])
+
+    # TODO: FIX (x_train, y_train shapes inconsistencies)
+    # Splits train screenplays into features (x) and targets (t), and splitting x into train and validation
+    x_train, x_validation, y_train, y_validation = train_test_split(x, t, test_size=0.2, random_state=1000)
+
+    # Extracts features from train screenplays
+    vectorizer = TfidfVectorizer(max_df=0.8, ngram_range=(1, 2))
+    x_train = vectorizer.fit_transform(x_train)
+    x_validation = vectorizer.transform(x_validation)
+
+    '''
+    CLASSIFIERS HISTORY:
+         OneVsRestClassifier(LogisticRegression()) -> 0.1205
+    '''
+
+    # TODO: Use feature-selection and ensembles with SGD/KNN classifiers
+    # Classifies the test screenplays
+    classifier = OneVsRestClassifier(LogisticRegression())
+    classifier.fit(x_train, y_train)
+    score = classifier.score(x_validation, y_validation)
+    print("Accuracy: {:.4f}".format(score))
+
+    # Saves model variables to file
+    save_model([vectorizer, classifier])
+
+    return [vectorizer, classifier]
 
 def classify(screenplays):
     # Loads classification model
