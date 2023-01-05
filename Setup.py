@@ -1,7 +1,10 @@
 # Imports
 import pandas, json, pathlib, sys
 
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+import pandas as pd
+
 from ScreenplayProcessor import extract_features
 from Classifier import *
 
@@ -9,14 +12,6 @@ from Classifier import *
 genre_labels = json.load(open("Jsons/Genres.json"))
 
 # Methods
-def load_screenplays(file_paths):
-    # Builds a screenplay record for each file path
-    # TODO: FIX (1142 records, processes only 828)
-    with ThreadPoolExecutor() as executor:
-        screenplay_records = executor.map(load_screenplay, file_paths)
-
-    return pandas.DataFrame(screenplay_records)
-
 def load_screenplay(file_path):
     screenplay_title = pathlib.Path(file_path).stem
     screenplay_text = open(file_path, "r", encoding="utf8").read()
@@ -24,6 +19,14 @@ def load_screenplay(file_path):
     time.sleep(0.1)
 
     return extract_features(screenplay_title, screenplay_text)
+
+def load_screenplays(file_paths):
+    # TODO: FIX (1142 records, processes only 828)
+    # Loads and processes each screenplay
+    with ThreadPoolExecutor() as executor:
+        screenplay_records = executor.map(load_screenplay, file_paths)
+
+    return pandas.DataFrame(screenplay_records)
 
 def load_genres():
     screenplays_info = pandas.read_json("Movie Script Info.json")
