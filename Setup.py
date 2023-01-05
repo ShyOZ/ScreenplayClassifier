@@ -44,7 +44,7 @@ if __name__ == "__main__":
     classifications = classify(screenplays)
 
     # Prints classifications to process
-    # print(classifications.to_json(orient="records", indent=4))
+    print(classifications.to_json(orient="records", indent=4))
 
     """
     OUTPUT EXAMPLE:
