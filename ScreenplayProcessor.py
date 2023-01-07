@@ -9,8 +9,8 @@ from transformers import pipeline
 EMOTIONS = pipeline("text-classification", model="bhadresh-savani/distilbert-base-uncased-emotion", top_k=None)
 emotion_labels = ["Sadness", "Anger", "Fear", "Joy", "Surprise", "Love"]
 
-SENTIMENT = pipeline("sentiment-analysis")
-sentiment_labels = ["Negative", "Positive"]
+# SENTIMENT = pipeline("sentiment-analysis", model="distilbert-base-uncased")
+# sentiment_labels = ["Negative", "Positive"]
 
 # NER = load("en_core_web_sm")
 
@@ -26,17 +26,18 @@ def get_screenplay_emotions(screenplay_text):
     return emotions_dict
 
 def get_screenplay_sentiment(screenplay_text):
-    screenplay_sentences = sent_tokenize(screenplay_text)
-    sentence_sentiments = [SENTIMENT(sentence)["label"] for sentence in screenplay_sentences]
+    pass
+    # screenplay_sentences = sent_tokenize(screenplay_text)
+    # sentence_sentiments = [SENTIMENT(sentence)["label"] for sentence in screenplay_sentences]
 
-    return max(sentence_sentiments.count(sentiment_labels[0]), sentence_sentiments.count(sentiment_labels[0]))
+    # return max(sentence_sentiments.count(sentiment_labels[0]), sentence_sentiments.count(sentiment_labels[0]))
 
 def extract_features(screenplay_title, screenplay_text):
     features_dict = {"Title": screenplay_title}
 
     # TODO: FURTHER FEATURE EXTRACTION (IF NECESSARY)
     features_dict.update(get_screenplay_emotions(screenplay_text))
-    features_dict.update(get_screenplay_sentiment(screenplay_text))
+    # features_dict.update(get_screenplay_sentiment(screenplay_text))
 
     return features_dict
 

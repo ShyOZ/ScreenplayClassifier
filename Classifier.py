@@ -1,18 +1,11 @@
 # Imports
 import pandas, pickle, os, time, pathlib
-from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier, BaggingClassifier
-from sklearn.gaussian_process import GaussianProcessClassifier
-from sklearn.linear_model import LogisticRegression, Lasso
-from sklearn.metrics import log_loss, f1_score
-from sklearn.multiclass import OneVsRestClassifier
-from sklearn.multioutput import ClassifierChain, MultiOutputClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.svm import SVC, LinearSVC
 
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import train_test_split, GridSearchCV, KFold, LeavePOut, cross_validate
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+from sklearn.multiclass import OneVsRestClassifier
 from sklearn.preprocessing import MultiLabelBinarizer
-from tqdm import tqdm
 
 from Setup import *
 
@@ -48,7 +41,6 @@ def create_model():
 
         train_screenplays.to_pickle(train_pickle_file)
 
-    print(f"Loaded {len(train_screenplays)} train screenplays")
     # Splits train screenplays into features (x) and targets (t), and splitting x into train and validation
     binarizer = MultiLabelBinarizer()
     t = binarizer.fit_transform(train_screenplays["Actual Genres"])
@@ -56,18 +48,30 @@ def create_model():
     x_train, x_validation, y_train, y_validation = train_test_split(x, t, test_size=0.2, random_state=1)
 
     # TODO: Improve the base model
-    # Builds classifier and predicts its F1 score (best score: 0.3482)
-    base_model = OneVsRestClassifier(DecisionTreeClassifier())
+    # Builds classifier and predicts its accuracy score (best score: 0.3482)
+    base_model = OneVsRestClassifier(LogisticRegression())
     classifier = base_model.fit(x_train, y_train)
 
     y_predictions = classifier.predict(x_validation)
-    score = f1_score(y_validation, y_predictions, average="micro")
-    print("F1-Score: {:.4f}".format(score))
+    score = accuracy_score(y_validation, y_predictions, average="micro")
+    print("Accuracy: {:.4f}".format(score))
 
     # Saves model variables to file
     save_model(classifier)
 
     return classifier
+
+def probabilities_to_percentages(probabilities):
+    probabilities_dict = dict(zip(genre_labels, probabilities))
+    probabilities_dict = dict(sorted(probabilities_dict.items(), key=lambda item: item[1], reverse=True))
+    sum_of_probabilities = sum(probabilities)
+    percentages_dict = {}
+
+    # Converts each genre's probability to matching percentage
+    for genre, probability in probabilities_dict.items():
+        percentages_dict[genre] = (probability / sum_of_probabilities) * 100
+
+    return percentages_dict
 
 def classify(screenplays):
     # Loads classification model
@@ -78,11 +82,10 @@ def classify(screenplays):
     # Classifies each screenplay and organizes in dictionary
     for offset, screenplay in screenplays.iterrows():
         test_vector = [screenplay.values[1:]]
-        test_probabilities = classifier.predict_proba(test_vector)[0]
-        predicted_genres_count = sum(test_probabilities)
-        test_percentages = [(prob / predicted_genres_count) * 100 for prob in test_probabilities]
+        test_probabilities = classifier.predict_proba(test_vector)
+        test_percentages = probabilities_to_percentages(test_probabilities)
 
-        classifications_dict[screenplay["Title"]] = dict(zip(genre_labels, test_percentages))
+        classifications_dict[screenplay["Title"]] = test_percentages
 
         # Prints progress (for GUI to update progress)
         classifications_complete += 1

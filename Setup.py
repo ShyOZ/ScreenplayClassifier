@@ -40,14 +40,38 @@ def load_genres():
 
 # Main
 if __name__ == "__main__":
-    # Loads and pre-processes screenplays to classify
-    screenplays = load_screenplays(sys.argv[1:])
+    train_directory, train_pickle_file = f"./TrainScreenplays/", f"./Classifier/Screenplays.pkl"
+    pickle_path = pathlib.Path.cwd() / train_pickle_file
+    train_file_names = os.listdir(train_directory)
+    train_file_paths = [train_directory + file_name for file_name in train_file_names]
+    genres = load_genres()
 
-    # Classifies the screenplays
-    classifications = classify(screenplays)
+    if pathlib.Path.exists(pickle_path):
+        train_screenplays_1 = pandas.read_pickle(train_pickle_file)
+    else:
+        train_screenplays_1 = pandas.merge(load_screenplays(train_file_paths), genres, on="Title")
+        train_screenplays_1.to_pickle(train_pickle_file)
 
-    # Prints classifications to process
-    print(classifications.to_json(orient="records", indent=4))
+    portion_size = len(train_screenplays_1)
+    print(f"Loaded {portion_size} train screenplays")
+
+    remaining_file_names = train_file_names - list(train_screenplays_1["Title"])
+    remaining_offsets = [train_file_names.index(name) for name in remaining_file_names]
+    remaining_file_paths = [train_file_paths[offset] for offset in remaining_offsets]
+    remaining_genres = [genres[offset] for offset in remaining_offsets]
+
+    train_screenplays_2 = pandas.merge(load_screenplays(remaining_file_paths), remaining_genres, on="Title")
+    train_screenplays_1.append(train_screenplays_2)
+    train_screenplays_1.to_pickle(train_pickle_file)
+
+    # # Loads and pre-processes screenplays to classify
+    # screenplays = load_screenplays(sys.argv[1:])
+    #
+    # # Classifies the screenplays
+    # classifications = classify(screenplays)
+    #
+    # # Prints classifications to process
+    # print(classifications.to_json(orient="records", indent=4))
 
     """
     OUTPUT EXAMPLE:
