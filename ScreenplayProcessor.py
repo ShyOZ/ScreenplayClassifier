@@ -89,7 +89,7 @@ def get_protagonist_role(text):
                               "Fantasy": "Creature/Royalty/Knight/Sorcerer", "Horror": "Monster/Killer/Victim",
                               "Romance": "Spouse/Lover/Ex", "SciFi": "Superhuman/Scientist/Alien/Robot",
                               "Thriller": "Detective/Spy", "War": "Soldier"}
-    action_genres = zero_shot_pipeline(actions, Setup.genre_labels, multi_label=True)["labels"]
+    action_genres = zero_shot_pipeline(actions, Loader.genre_labels, multi_label=True)["labels"]
 
     return {"Protagonist Roles": protagonist_roles_dict[action_genres[0]]}
 
@@ -138,7 +138,7 @@ def get_topics(text):
                          "Romance": ["Emotion", "Lust", "Relationship"],
                          "SciFi": ["Science", "Technology", "Space", "Future"],
                          "Thriller": ["Espionage", "Conspiracy", "Cunning"], "War": ["War", "Death", "Politics"]}
-    topic_genres = zero_shot_pipeline(topic_descriptives, Setup.genre_labels, multi_label=True)["labels"]
+    topic_genres = zero_shot_pipeline(topic_descriptives, Loader.genre_labels, multi_label=True)["labels"]
 
     return {"Topics": genre_topics_dict[topic_genres[0]]}
 
