@@ -11,7 +11,6 @@ from Classifier import *
 # Globals
 genre_labels = json.load(open("Jsons/Genres.json"))
 
-
 # Methods
 def load_screenplay(file_path):
     screenplay_title = pathlib.Path(file_path).stem
@@ -29,7 +28,6 @@ def load_screenplays(file_paths):
 
     return pandas.DataFrame(screenplay_records)
 
-
 def load_genres():
     screenplays_info = pandas.read_json("Movie Script Info.json")
     genres_dict = {}
@@ -43,13 +41,13 @@ def load_genres():
 
 # Main
 if __name__ == "__main__":
-    train_directory, train_pickle_file = f"./TrainScreenplays/", f"./Classifier/Screenplays.csv"
-    pickle_path = pathlib.Path.cwd() / train_pickle_file
+    train_directory, train_pickle_file = f"./TrainScreenplays/", f"./Classifier/TrainScreenplays.csv"
+    csv_path = pathlib.Path.cwd() / train_pickle_file
     train_file_names = os.listdir(train_directory)
     train_file_paths = [train_directory + file_name for file_name in train_file_names]
     genres = load_genres()
 
-    if pathlib.Path.exists(pickle_path):
+    if pathlib.Path.exists(csv_path):
         train_screenplays_1 = pandas.read_pickle(train_pickle_file)
     else:
         train_screenplays_1 = pandas.merge(load_screenplays(train_file_paths), genres, on="Title")
