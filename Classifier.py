@@ -63,7 +63,8 @@ def create_model():
     return classifier
 
 def probabilities_to_percentages(probabilities):
-    probabilities_dict = dict(zip(Loader.genre_labels, probabilities))
+    genre_labels = json.load(open("Jsons/Genres.json"))
+    probabilities_dict = dict(zip(genre_labels, probabilities))
     probabilities_dict = dict(sorted(probabilities_dict.items(), key=lambda item: item[1], reverse=True))
     sum_of_probabilities = sum(probabilities)
     percentages_dict = {}

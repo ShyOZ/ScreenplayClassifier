@@ -1,18 +1,15 @@
 # Imports
-import gensim
-import nltk, textblob, spacy, re, string, datetime
+import spacy, re, datetime
 
 from collections import Counter
-
 from gensim import corpora
-from gensim.summarization import summarize
-from nltk import word_tokenize
+from gensim.models import LdaModel
 from nltk.corpus import stopwords
-from textblob import TextBlob, Word
+from textblob import TextBlob
 from transformers import pipeline
 
 # Globals
-import Loader
+from Loader import genre_labels
 
 emotions_pipeline = pipeline("text-classification", model="bhadresh-savani/distilbert-base-uncased-emotion", top_k=100)
 emotion_labels = ["Anger", "Fear", "Joy", "Love", "Sadness",  "Surprise"]
@@ -28,7 +25,7 @@ def get_dominant_time_of_day(text):
 
     # Checks all time expressions in the text
     time_expressions = re.findall(r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", text)
-    time_expressions = [datetime.strptime(time_str, "%H:%M").time() for time_str in time_expressions]
+    time_expressions = [datetime.datetime.strptime(time_str, "%H:%M").time() for time_str in time_expressions]
 
     daytime_counter += len([time for time in time_expressions if dawn_time <= time < dusk_time])
     nighttime_counter += len(time_expressions) - daytime_counter
@@ -89,7 +86,7 @@ def get_protagonist_role(text):
                               "Fantasy": "Creature/Royalty/Knight/Sorcerer", "Horror": "Monster/Killer/Victim",
                               "Romance": "Spouse/Lover/Ex", "SciFi": "Superhuman/Scientist/Alien/Robot",
                               "Thriller": "Detective/Spy", "War": "Soldier"}
-    action_genres = zero_shot_pipeline(actions, Loader.genre_labels, multi_label=True)["labels"]
+    action_genres = zero_shot_pipeline(actions, genre_labels, multi_label=True)["labels"]
 
     return {"Protagonist Roles": protagonist_roles_dict[action_genres[0]]}
 
@@ -125,8 +122,8 @@ def get_topics(text):
     tokens = [b for l in sentences for b in zip(l.split(" ")[:-1], l.split(" ")[1:])] # e.g: Day + Time = Daytime
     dictionary = corpora.Dictionary(tokens)
     bag_of_words = [dictionary.doc2bow(t) for t in tokens]
-    lda_model = gensim.models.LdaModel(bag_of_words, num_topics=3, id2word=dictionary, passes=10, chunksize=10,
-                                       update_every=1, alpha="auto", per_word_topics=True, random_state=42)
+    lda_model = LdaModel(bag_of_words, num_topics=3, id2word=dictionary, passes=10, chunksize=10,
+                         update_every=1, alpha="auto", per_word_topics=True, random_state=42)
     topic_descriptives = " ".join([re.sub(r"[^a-zA-Z\s]", "", topic) for offset, topic in lda_model.print_topics()])
 
     # Retrieves the text main topic by its descriptives
@@ -138,7 +135,7 @@ def get_topics(text):
                          "Romance": ["Emotion", "Lust", "Relationship"],
                          "SciFi": ["Science", "Technology", "Space", "Future"],
                          "Thriller": ["Espionage", "Conspiracy", "Cunning"], "War": ["War", "Death", "Politics"]}
-    topic_genres = zero_shot_pipeline(topic_descriptives, Loader.genre_labels, multi_label=True)["labels"]
+    topic_genres = zero_shot_pipeline(topic_descriptives, genre_labels, multi_label=True)["labels"]
 
     return {"Topics": genre_topics_dict[topic_genres[0]]}
 
