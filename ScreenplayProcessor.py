@@ -52,6 +52,7 @@ def get_setting(text):
     future_counter += len([year for year in years if year > datetime.date.today().year])
     past_counter += len(years) - (past_counter + future_counter)
 
+    time_period = "Present"
     if all(past_counter > counter for counter in [present_counter, future_counter]):
         time_period = "Past"
     elif all(present_counter > counter for counter in [past_counter, future_counter]):
@@ -86,7 +87,9 @@ def get_protagonist_role(text):
                               "Fantasy": "Creature/Royalty/Knight/Sorcerer", "Horror": "Monster/Killer/Victim",
                               "Romance": "Spouse/Lover/Ex", "SciFi": "Superhuman/Scientist/Alien/Robot",
                               "Thriller": "Detective/Spy", "War": "Soldier"}
-    action_genres = zero_shot_pipeline(actions, genre_labels, multi_label=True)["labels"]
+
+    action_genres = ["Drama"] if len(actions) == 0 \
+        else zero_shot_pipeline(actions, genre_labels, multi_label=True)["labels"]
 
     return {"Protagonist Roles": protagonist_roles_dict[action_genres[0]]}
 
@@ -135,7 +138,8 @@ def get_topics(text):
                          "Romance": ["Emotion", "Lust", "Relationship"],
                          "SciFi": ["Science", "Technology", "Space", "Future"],
                          "Thriller": ["Espionage", "Conspiracy", "Cunning"], "War": ["War", "Death", "Politics"]}
-    topic_genres = zero_shot_pipeline(topic_descriptives, genre_labels, multi_label=True)["labels"]
+    topic_genres = ["Drama"] if len(topic_descriptives) == 0 \
+        else zero_shot_pipeline(topic_descriptives, genre_labels, multi_label=True)["labels"]
 
     return {"Topics": genre_topics_dict[topic_genres[0]]}
 
