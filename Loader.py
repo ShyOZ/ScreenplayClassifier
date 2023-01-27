@@ -1,9 +1,10 @@
 # Imports
+import time
+
 import pandas, pathlib, json, sys, os
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-
-import pandas as pd
 
 from ScreenplayProcessor import *
 # from Classifier import *
@@ -12,6 +13,17 @@ from ScreenplayProcessor import *
 genre_labels = json.load(open("Jsons/Genres.json"))
 
 # Methods
+def load_screenplay(file_path):
+    screenplay_title = pathlib.Path(file_path).stem
+    screenplay_text = open(file_path, "r", encoding="utf8").read()
+    screenplay_features = extract_features(screenplay_title, screenplay_text)
+
+    time.sleep(0.01)
+
+    print(f"{datetime.datetime.now()}: {screenplay_title} processed.")
+
+    return screenplay_features
+
 def load_screenplays():
     # Loads and processes each screenplay
     train_directory, train_csv_file = f"./TrainScreenplays/", f"./Classifier/TrainScreenplays.csv"
@@ -19,31 +31,28 @@ def load_screenplays():
     train_file_names = os.listdir(train_directory)
 
     if pathlib.Path.exists(csv_path):
-        loaded_screenplays = pandas.read_csv(csv_path)
+        loaded_screenplays = list(pandas.read_csv(csv_path)["Title"])
         train_file_names = [file_name for file_name in train_file_names
-                            if pathlib.Path(file_name).stem not in list(loaded_screenplays["Title"])]
+                            if pathlib.Path(file_name).stem not in loaded_screenplays]
         train_file_paths = [train_directory + file_name for file_name in train_file_names]
 
-        print(train_file_paths)
-
-    loaded_screenplays = []
-
+    batch_size = 10
+    batch_count = len(train_file_paths) // batch_size
     print(f"{datetime.datetime.now()}: Processing begun.")
 
-    # TODO: use futures threads (25 workers, batches of 25 screenplays)
-    for file_path in train_file_paths:
-        screenplay_title = pathlib.Path(file_path).stem
-        screenplay_text = open(file_path, "r", encoding="utf8").read()
-        loaded_screenplays.append(extract_features(screenplay_title, screenplay_text))
+    # TODO: use futures threads (10 workers, batches of 10 screenplays)
+    with ThreadPoolExecutor(batch_size) as executor:
+        for i in range(batch_count):
+            file_paths_batch = train_file_paths[:batch_size]
 
-        print(f"{datetime.datetime.now()}: {screenplay_title} processed.")
+            screenplay_threads = [executor.submit(load_screenplay, file_path) for file_path in file_paths_batch]
+            screenplays_batch = [thread.result() for thread in screenplay_threads]
 
-        if len(loaded_screenplays) == 10:
-            screenplays_batch = pd.DataFrame(loaded_screenplays)
-            screenplays_batch.to_csv(csv_path, mode="a", index=True, header=False)
+            screenplays_batch = pandas.DataFrame(screenplays_batch)
+            screenplays_batch.to_csv(csv_path, mode="a", index=False, header=False)
+            print(f"{datetime.datetime.now()}: {batch_size} screenplay records were written to csv file.")
 
-            print(f"{datetime.datetime.now()}: 10 screenplay records were written to csv file.")
-            loaded_screenplays.clear()
+            train_file_paths = train_file_paths[batch_size:]
 
     print(f"{datetime.datetime.now()}: Processing ended.")
 
