@@ -14,6 +14,7 @@ genre_labels = json.load(open("Jsons/Genres.json"))
 
 # Methods
 def load_screenplay(file_path):
+    # Loads and processes a screenplay by its file path
     screenplay_title = pathlib.Path(file_path).stem
     screenplay_text = open(file_path, "r", encoding="utf8").read()
     screenplay_features = extract_features(screenplay_title, screenplay_text)
@@ -24,9 +25,9 @@ def load_screenplay(file_path):
 
     return screenplay_features
 
-def load_screenplays():
+def load_train_screenplays():
     # Loads and processes each screenplay
-    train_directory, train_csv_file = f"./TrainScreenplays/", f"./Classifier/TrainScreenplays.csv"
+    train_directory, train_csv_file = f"./TrainScreenplays/", f"./Classifier/Train.csv"
     csv_path = pathlib.Path.cwd() / train_csv_file
     train_file_names = os.listdir(train_directory)
 
@@ -36,11 +37,10 @@ def load_screenplays():
                             if pathlib.Path(file_name).stem not in loaded_screenplays]
         train_file_paths = [train_directory + file_name for file_name in train_file_names]
 
-    batch_size = 10
+    batch_size = 50
     batch_count = len(train_file_paths) // batch_size
     print(f"{datetime.datetime.now()}: Processing begun.")
 
-    # TODO: use futures threads (10 workers, batches of 10 screenplays)
     with ThreadPoolExecutor(batch_size) as executor:
         for i in range(batch_count):
             file_paths_batch = train_file_paths[:batch_size]
@@ -56,13 +56,21 @@ def load_screenplays():
 
     print(f"{datetime.datetime.now()}: Processing ended.")
 
-    # return pandas.DataFrame(screenplay_records)
+def load_test_screenplays(file_paths):
+    # Loads and processes each screenplay
+    batch_size = 5
+
+    with ThreadPoolExecutor(batch_size) as executor:
+        screenplay_threads = [executor.submit(load_screenplay, file_path) for file_path in file_paths]
+        screenplay_records = [thread.result() for thread in screenplay_threads]
+
+    return pandas.DataFrame(screenplay_records)
 
 def load_genres():
+    # Builds a dictionary of screenplay genres by its title
     screenplays_info = pandas.read_json("Movie Script Info.json")
     genres_dict = {}
 
-    # Builds a dictionary of screenplay genres by its title
     for offset, screenplay_info in screenplays_info.iterrows():
         genres_dict[screenplay_info["title"]] = screenplay_info["genres"]
 
@@ -70,19 +78,9 @@ def load_genres():
 
 # Main
 if __name__ == "__main__":
-    load_screenplays()
+    # Loads and pre-processes screenplays to classify
+    screenplays = load_test_screenplays(sys.argv[1:])
 
-    # file_path = sys.argv[1:][0]
-    # screenplay_title = pathlib.Path(file_path).stem
-    # screenplay_text = open(file_path, "r", encoding="utf8").read()
-    #
-    # print(f"{datetime.datetime.now()}: Processing begun.")
-    # print(extract_features(screenplay_title, screenplay_text))
-    # print(f"{datetime.datetime.now()}: Processing ended.")
-
-    # # Loads and pre-processes screenplays to classify
-    # screenplays = load_screenplays(sys.argv[1:])
-    #
     # # Classifies the screenplays
     # classifications = classify(screenplays)
     #
