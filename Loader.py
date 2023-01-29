@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 from ScreenplayProcessor import *
-# from Classifier import *
+from Classifier import *
 
 # Globals
 genre_labels = json.load(open("Jsons/Genres.json"))
@@ -58,7 +58,7 @@ def load_train_screenplays():
 
 def load_test_screenplays(file_paths):
     # Loads and processes each screenplay
-    batch_size = 5
+    batch_size = len(file_paths)
 
     with ThreadPoolExecutor(batch_size) as executor:
         screenplay_threads = [executor.submit(load_screenplay, file_path) for file_path in file_paths]
@@ -81,10 +81,10 @@ if __name__ == "__main__":
     # Loads and pre-processes screenplays to classify
     screenplays = load_test_screenplays(sys.argv[1:])
 
-    # # Classifies the screenplays
-    # classifications = classify(screenplays)
-    #
-    # # Prints classifications to process
+    # Classifies the screenplays
+    classifications = classify(screenplays)
+
+    # Prints classifications to process
     # print(classifications.to_json(orient="records", indent=4))
 
     """
