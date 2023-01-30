@@ -8,32 +8,31 @@ from nltk.corpus import stopwords
 from textblob import TextBlob
 from transformers import pipeline
 
-# Globals
 from Loader import genre_labels
 
+# Globals
 # emotions_pipeline = pipeline("text-classification", model="bhadresh-savani/distilbert-base-uncased-emotion", top_k=100)
-emotion_labels = ["Anger", "Fear", "Joy", "Love", "Sadness",  "Surprise"]
 # zero_shot_pipeline = pipeline("zero-shot-classification", model="oigele/Fb_improved_zeroshot")
 # entities_pipeline = spacy.load("en_core_web_sm")
 
+times_of_day = ["Daytime", "Nighttime"]
+time_periods = ["Past", "Present", "Future"]
 protagonist_roles_dict = {"Action": "Fighter", "Adventure": "Traveller/Explorer", "Comedy": "Comedian",
                           "Crime": "Law Person/Outlaw", "Drama": "Realist", "Family": "Child",
                           "Fantasy": "Creature/Royalty/Knight/Sorcerer", "Horror": "Monster/Killer/Victim",
                           "Romance": "Spouse/Lover/Ex", "SciFi": "Superhuman/Scientist/Alien/Robot",
                           "Thriller": "Detective/Spy", "War": "Soldier"}
-
-genre_topics_dict = {"Action": ["Violence", "Danger", "Chase"], "Adventure": ["Exploration", "Journey"],
-                     "Comedy": ["Amusement", "Laughter"], "Crime": ["Crime", "Trial"],
-                     "Drama": ["Conflict", "Crisis", "Tragedy"], "Family": ["Adolescence", "Care", "Friendship"],
-                     "Fantasy": ["Supernatural", "Magic", "Wonder"],
-                     "Horror": ["Terror", "Disgust", "Murder", "Gore"],
-                     "Romance": ["Emotion", "Lust", "Relationship"],
-                     "SciFi": ["Science", "Technology", "Space", "Future"],
-                     "Thriller": ["Espionage", "Conspiracy", "Cunning"], "War": ["War", "Death", "Politics"]}
+emotion_labels = ["Anger", "Fear", "Joy", "Love", "Sadness",  "Surprise"]
+genre_topics_dict = {"Action": "Violence, Danger, Chase", "Adventure": "Exploration, Journey",
+                     "Comedy": "Amusement, Laughter", "Crime": "Crime, Trial", "Drama": "Conflict, Crisis, Tragedy",
+                     "Family": "Adolescence, Care, Friendship", "Fantasy": "Supernatural, Magic, Wonder",
+                     "Horror": "Terror, Disgust, Murder, Gore", "Romance": "Emotion, Lust, Relationship",
+                     "SciFi": "Science, Technology, Space, Future", "Thriller": "Espionage, Conspiracy, Cunning",
+                     "War": "War, Death, Politics"}
 
 # Methods
 def get_dominant_time_of_day(text):
-    return {"Dominant Time of Day": "Daytime" if random.randint(0, 1) == 0 else "Nighttime"}
+    return {"Dominant Time of Day": times_of_day[random.randint(0, 1)]}
 
     # daytime_counter, nighttime_counter = 0, 0
     # dusk_time, dawn_time = datetime.time(18), datetime.time(6)
@@ -58,9 +57,7 @@ def get_dominant_time_of_day(text):
     #
     # return {"Dominant Time of Day": "Daytime" if daytime_counter > nighttime_counter else "Nighttime"}
 
-def get_setting(text):
-    time_periods = ["Past", "Present", "Future"]
-
+def get_time_period(text):
     return {"Time Period": time_periods[random.randint(0, 2)]}
 
     # past_counter, present_counter, future_counter = 0, 0, 0
@@ -170,7 +167,7 @@ def extract_features(screenplay_title, screenplay_text):
     features_dict.update(get_topics(screenplay_text))
     features_dict.update(get_emotions(screenplay_text))
     features_dict.update(get_protagonist_role(screenplay_text))
-    features_dict.update(get_setting(screenplay_text))
+    features_dict.update(get_time_period(screenplay_text))
     features_dict.update(get_dominant_time_of_day(screenplay_text))
 
     return features_dict

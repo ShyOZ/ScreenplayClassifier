@@ -30,6 +30,7 @@ def load_train_screenplays():
     train_directory, train_csv_file = f"./TrainScreenplays/", f"./Classifier/Train.csv"
     csv_path = pathlib.Path.cwd() / train_csv_file
     train_file_names = os.listdir(train_directory)
+    train_file_paths = [train_directory + file_name for file_name in train_file_names]
 
     if pathlib.Path.exists(csv_path):
         loaded_screenplays = list(pandas.read_csv(csv_path)["Title"])
@@ -49,7 +50,7 @@ def load_train_screenplays():
             screenplays_batch = [thread.result() for thread in screenplay_threads]
 
             screenplays_batch = pandas.DataFrame(screenplays_batch)
-            screenplays_batch.to_csv(csv_path, mode="a", index=False, header=False)
+            screenplays_batch.to_csv(csv_path, mode="a", index=False, header=not pathlib.Path.exists(csv_path))
             print(f"{datetime.datetime.now()}: {batch_size} screenplay records were written to csv file.")
 
             train_file_paths = train_file_paths[batch_size:]
@@ -74,7 +75,7 @@ def load_genres():
     for offset, screenplay_info in screenplays_info.iterrows():
         genres_dict[screenplay_info["title"]] = screenplay_info["genres"]
 
-    return pandas.DataFrame({"Title": genres_dict.keys(), "Actual Genres": genres_dict.values()})
+    return pandas.DataFrame({"Title": genres_dict.keys(), "Genres": genres_dict.values()})
 
 # Main
 if __name__ == "__main__":
