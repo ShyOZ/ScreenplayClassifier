@@ -81,9 +81,9 @@ def probabilities_to_percentages(probabilities):
 
     return percentages_dict
 
-def classify(screenplays):
+def classify(file_paths):
     # Loads classification model
-    screenplays = encode(screenplays)
+    screenplays = encode(load_test_screenplays(file_paths))
     classifier = load_model()
     classifications_dict = {}
     classifications_complete = 0
@@ -95,7 +95,7 @@ def classify(screenplays):
         print(test_probabilities)
 
         # test_percentages = probabilities_to_percentages(test_probabilities)
-        # classifications_dict[screenplay["Title"]] = test_percentages
+        # classifications_dict[file_paths[offset]] = test_percentages
 
         # Prints progress (for GUI to update progress)
         # classifications_complete += 1
@@ -103,5 +103,5 @@ def classify(screenplays):
 
         time.sleep(0.5) # seconds
 
-    return pandas.DataFrame({"Title": classifications_dict.keys(),
+    return pandas.DataFrame({"FilePath": classifications_dict.keys(),
                              "GenrePercentages": classifications_dict.values()})

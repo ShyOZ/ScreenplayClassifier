@@ -79,11 +79,8 @@ def load_genres():
 
 # Main
 if __name__ == "__main__":
-    # Loads and pre-processes screenplays to classify
-    screenplays = load_test_screenplays(sys.argv[1:])
-
-    # Classifies the screenplays
-    classifications = classify(screenplays)
+    # Loads, pre-processes and classifies the screenplays
+    classifications = classify(sys.argv[1:])
 
     # Prints classifications to process
     # print(classifications.to_json(orient="records", indent=4))
