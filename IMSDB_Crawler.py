@@ -3,30 +3,19 @@ import json
 import requests
 from tqdm import tqdm
 import multiprocessing
-from pathlib import Path
 from bs4 import BeautifulSoup
-from dataclasses import dataclass, field
-from dataclasses_json import dataclass_json
+from typing import Set, Optional
 
-from typing import Set, Union
+from ScriptInfo import ScriptInfo
+
+import constants
 
 IMSDB_ROOT = "http://www.imsdb.com"
 
-RESOURCE_PATH = Path("Resources")
-OUTPUT_PATH = RESOURCE_PATH / "TrainScreenplays"
-TARGET_GENRES = set((RESOURCE_PATH / "Genres.txt").read_text().splitlines())
+constants.train_screenplays_paths.mkdir(parents=True, exist_ok=True)
 
-OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
 
-@dataclass_json
-@dataclass(frozen=True)
-class ScriptInfo:
-    title: str
-    info_url: str
-    script_url: str
-    genres: set[str] = field(default_factory=set)
-
-def get_movie_info_links_from_genre(genre: str) -> Union[Set[str], None]:
+def get_movie_info_links_from_genre(genre: str) -> Optional[Set[str]]:
     request = requests.get(f"http://www.imsdb.com/genre/{genre}", timeout=5)
     if request.status_code != requests.codes.ok:
         return None
@@ -38,7 +27,13 @@ def get_movie_info_links_from_genre(genre: str) -> Union[Set[str], None]:
     return {IMSDB_ROOT + tag["href"] for tag in link_tags}
 
 
-def get_script_information(movie_info_url: str) -> Union[ScriptInfo, None]:
+def as_filename_compatible(title: str) -> str:
+    if title.endswith(" The"):
+        title = "The " + title[:-4]
+    return re.sub(r"[^a-zA-Z0-9\-. ]+", "", title)
+
+
+def get_script_information(movie_info_url: str) -> Optional[ScriptInfo]:
     request = requests.get(movie_info_url, timeout=5)
     if request.status_code != requests.codes.ok:
         return None
@@ -61,12 +56,12 @@ def get_script_information(movie_info_url: str) -> Union[ScriptInfo, None]:
 
     genre_links = details_table.find_all("a", title=re.compile("Scripts$"))
     genres = {genre["href"][len("/genre/"):] for genre in genre_links}
-    genres = set(filter(lambda g: g in TARGET_GENRES, genres))
+    genres = set(filter(lambda g: g in constants.genre_labels, genres))
 
-    return ScriptInfo(title, movie_info_url, script_url, genres)
+    return ScriptInfo(as_filename_compatible(title), movie_info_url, script_url, genres)
 
 
-def get_movie_script(script_url: str) -> Union[str, None]:
+def get_movie_script(script_url: str) -> Optional[str]:
     request = requests.get(script_url, timeout=5)
     if request.status_code != requests.codes.ok:
         return None
@@ -86,17 +81,13 @@ def get_movie_script(script_url: str) -> Union[str, None]:
 
 def write_script_to_file(script_title: str, script_text: str) -> None:
     script_title = re.sub(r"[^\w\-_. ]+", "_", script_title)
-    script_file_path = OUTPUT_PATH / (script_title + ".txt")
+    script_file_path = constants.train_screenplays_paths / (script_title + ".txt")
     script_file_path.write_text(script_text, encoding="utf-8")
 
 
-def process_task(info_url):
+def process_script_info(script_info: ScriptInfo) -> Optional[dict]:
     while True:
         try:
-            script_info = get_script_information(info_url)
-            if script_info is None:
-                return None
-
             script_text = get_movie_script(script_info.script_url)
 
             if script_text is None:
@@ -110,19 +101,47 @@ def process_task(info_url):
             pass
 
 
-if __name__ == "__main__":
+def process_info_url(info_url: str) -> Optional[dict]:
+    while True:
+        try:
+            script_info = get_script_information(info_url)
+            if script_info is None:
+                return None
+
+            return process_script_info(script_info)
+
+        except (requests.ConnectionError, requests.Timeout):
+            pass
+
+
+def scrape_from_scratch():
     all_urls = set()
 
-    for genre in tqdm(TARGET_GENRES, desc="processing genres"):
+    for genre in tqdm(constants.genre_labels, desc="processing genres"):
         genre_urls = get_movie_info_links_from_genre(genre)
         all_urls = all_urls.union(genre_urls)
 
     with multiprocessing.Pool(4) as pool:
-        movie_info = list(tqdm(pool.imap(process_task, all_urls), total=len(all_urls), desc="processing script info"))
+        movie_info = list(
+            tqdm(pool.imap(process_info_url, all_urls), total=len(all_urls), desc="processing script info"))
 
     movie_info = filter(lambda x: x is not None, movie_info)
 
     movie_info = sorted(movie_info, key=lambda info: info["title"])
 
-    with open(RESOURCE_PATH / "Movie Script Info.json", "w") as f:
+    with constants.movie_info_path.open("w") as f:
         json.dump(movie_info, f)
+
+
+def scrape_from_existing():
+    movie_info = ScriptInfo.schema().loads(constants.movie_info_path.read_text(), many=True)
+
+    with multiprocessing.Pool(4) as pool:
+        list(tqdm(pool.imap(process_script_info, movie_info), total=len(movie_info), desc="processing script info"))
+
+
+if __name__ == "__main__":
+    if constants.movie_info_path.exists():
+        scrape_from_existing()
+    else:
+        scrape_from_scratch()

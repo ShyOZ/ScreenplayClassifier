@@ -1,61 +1,67 @@
 # Imports
+import math
 import time
-
-import pandas, pathlib, json, sys, os
-
-from concurrent.futures import ThreadPoolExecutor
+import pandas
+import constants
+import multiprocessing
+from pathlib import Path
 from datetime import datetime
+from ScriptInfo import ScriptInfo
+from concurrent.futures import ThreadPoolExecutor
+from ScreenplayProcessor import extract_features
 
-from ScreenplayProcessor import *
-from Classifier import *
 
-# Globals
-genre_labels = json.load(open("Jsons/Genres.json"))
 
 # Methods
 def load_screenplay(file_path):
     # Loads and processes a screenplay by its file path
-    screenplay_title = pathlib.Path(file_path).stem
+    screenplay_title = Path(file_path).stem
     screenplay_text = open(file_path, "r", encoding="utf8").read()
     screenplay_features = extract_features(screenplay_title, screenplay_text)
 
     time.sleep(0.01)
 
-    print(f"{datetime.datetime.now()}: {screenplay_title} processed.")
+    print(f"{datetime.now()}: {screenplay_title} processed.")
 
     return screenplay_features
 
+
 def load_train_screenplays():
-    # Loads and processes each screenplay
-    train_directory, train_csv_file = f"./TrainScreenplays/", f"./Classifier/Train.csv"
-    csv_path = pathlib.Path.cwd() / train_csv_file
-    train_file_names = os.listdir(train_directory)
-    train_file_paths = [train_directory + file_name for file_name in train_file_names]
+    (Path.cwd() / "Classifier").mkdir(parents=True, exist_ok=True)
 
-    if pathlib.Path.exists(csv_path):
-        loaded_screenplays = list(pandas.read_csv(csv_path)["Title"])
-        train_file_names = [file_name for file_name in train_file_names
-                            if pathlib.Path(file_name).stem not in loaded_screenplays]
-        train_file_paths = [train_directory + file_name for file_name in train_file_names]
+    if not Path.exists(constants.train_screenplays_directory):
+        raise FileNotFoundError("TrainScreenplays directory not found.")
 
-    batch_size = 50
-    batch_count = len(train_file_paths) // batch_size
-    print(f"{datetime.datetime.now()}: Processing begun.")
+    train_screenplays_paths = constants.train_screenplays_paths
+
+    if Path.exists(constants.train_csv_path):
+        trained_screenplays_titles = pandas.read_csv(constants.train_csv_path, usecols=["Title"]).Title
+        trained_screenplays_paths = map(lambda title: constants.train_screenplays_directory / f"{title}.txt",
+                                        trained_screenplays_titles)
+        train_screenplays_paths = filter(lambda path: path not in trained_screenplays_paths, train_screenplays_paths)
+
+    batch_size = multiprocessing.cpu_count()
+    batch_count = math.ceil(len(train_screenplays_paths) / batch_size)
+    print(f"{datetime.now()}: Processing begun.")
 
     with ThreadPoolExecutor(batch_size) as executor:
         for i in range(batch_count):
-            file_paths_batch = train_file_paths[:batch_size]
+            limit = min((i + 1) * batch_size, len(train_screenplays_paths))
+            file_paths_batch = train_screenplays_paths[i * batch_size:limit]
 
             screenplay_threads = [executor.submit(load_screenplay, file_path) for file_path in file_paths_batch]
             screenplays_batch = [thread.result() for thread in screenplay_threads]
 
             screenplays_batch = pandas.DataFrame(screenplays_batch)
-            screenplays_batch.to_csv(csv_path, mode="a", index=False, header=not pathlib.Path.exists(csv_path))
-            print(f"{datetime.datetime.now()}: {batch_size} screenplay records were written to csv file.")
+            screenplays_batch.to_csv(constants.train_csv_path,
+                                     mode="a",
+                                     index=False,
+                                     header=not constants.train_csv_path.exists())
 
-            train_file_paths = train_file_paths[batch_size:]
+            print(f"{datetime.datetime.now()}: screenplays records were written to csv file.")
 
     print(f"{datetime.datetime.now()}: Processing ended.")
+
 
 def load_test_screenplays(file_paths):
     # Loads and processes each screenplay
@@ -67,20 +73,19 @@ def load_test_screenplays(file_paths):
 
     return pandas.DataFrame(screenplay_records)
 
-def load_genres():
-    # Builds a dictionary of screenplay genres by its title
-    screenplays_info = pandas.read_json("Movie Script Info.json")
-    genres_dict = {}
 
-    for offset, screenplay_info in screenplays_info.iterrows():
-        genres_dict[screenplay_info["title"]] = screenplay_info["genres"]
+def load_genres():
+    movie_info = ScriptInfo.schema().loads(constants.movie_info_path.read_text(), many=True)
+
+    genres_dict = {screenplay_info.title: list(screenplay_info.genres) for screenplay_info in movie_info}
 
     return pandas.DataFrame({"Title": genres_dict.keys(), "Genres": genres_dict.values()})
+
 
 # Main
 if __name__ == "__main__":
     # Loads, pre-processes and classifies the screenplays
-    classifications = classify(sys.argv[1:])
+    load_train_screenplays()
 
     # Prints classifications to process
     # print(classifications.to_json(orient="records", indent=4))
