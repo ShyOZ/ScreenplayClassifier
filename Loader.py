@@ -2,6 +2,7 @@
 import math
 import time
 import pandas
+
 import constants
 import multiprocessing
 from pathlib import Path
@@ -86,11 +87,7 @@ def load_genres():
 
 # Main
 if __name__ == "__main__":
-    # Loads, pre-processes and classifies the screenplays
-    load_train_screenplays()
-
-    # Prints classifications to process
-    # print(classifications.to_json(orient="records", indent=4))
+    ...
 
     """
     OUTPUT EXAMPLE:

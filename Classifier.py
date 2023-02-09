@@ -14,40 +14,11 @@ from sklearn.preprocessing import MultiLabelBinarizer
 
 
 # Methods
-def load_model():
-    # Validates existence of pickle file
-    if not constants.model_pickle_path.exists():
-        return create_model()
-
-    # Reads model variables from pickle file
-    pickle_file = open(constants.model_pickle_path, "rb")
-    model = pickle.load(pickle_file)
-    pickle_file.close()
-
-    return model
-
-
 def save_model(model):
     # Writes model variables to pickle file
     pickle_file = open(constants.model_pickle_path, "wb")
     pickle.dump(model, pickle_file)
     pickle_file.close()
-
-
-def encode(screenplays):
-    # Encodes the textual values in the screenplays dataframe
-    topics = list(ScreenplayProcessor.genre_topics_dict.values())
-    protagonist_roles = list(ScreenplayProcessor.protagonist_roles_dict.values())
-
-    screenplays.replace({"Topics": {topic: topics.index(topic) for topic in topics},
-                         "Protagonist Roles": {role: protagonist_roles.index(role) for role in protagonist_roles},
-                         "Time Period": {period: ScreenplayProcessor.time_periods.index(period)
-                                         for period in ScreenplayProcessor.time_periods},
-                         "Dominant Time of Day": {dom_time: ScreenplayProcessor.times_of_day.index(dom_time)
-                                                  for dom_time in ScreenplayProcessor.times_of_day}},
-                        inplace=True)
-
-    return screenplays
 
 
 def create_model():
@@ -72,6 +43,35 @@ def create_model():
     save_model(classifier)
 
     return classifier
+
+
+def load_model():
+    # Validates existence of pickle file
+    if not constants.model_pickle_path.exists():
+        return create_model()
+
+    # Reads model variables from pickle file
+    pickle_file = open(constants.model_pickle_path, "rb")
+    model = pickle.load(pickle_file)
+    pickle_file.close()
+
+    return model
+
+
+def encode(screenplays):
+    # Encodes the textual values in the screenplays dataframe
+    topics = list(ScreenplayProcessor.genre_topics_dict.values())
+    protagonist_roles = list(ScreenplayProcessor.protagonist_roles_dict.values())
+
+    screenplays.replace({"Topics": {topic: topics.index(topic) for topic in topics},
+                         "Protagonist Roles": {role: protagonist_roles.index(role) for role in protagonist_roles},
+                         "Time Period": {period: ScreenplayProcessor.time_periods.index(period)
+                                         for period in ScreenplayProcessor.time_periods},
+                         "Dominant Time of Day": {dom_time: ScreenplayProcessor.times_of_day.index(dom_time)
+                                                  for dom_time in ScreenplayProcessor.times_of_day}},
+                        inplace=True)
+
+    return screenplays
 
 
 def probabilities_to_percentages(probabilities):
