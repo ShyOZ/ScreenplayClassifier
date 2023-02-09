@@ -7,9 +7,8 @@ import multiprocessing
 from pathlib import Path
 from datetime import datetime
 from ScriptInfo import ScriptInfo
-from concurrent.futures import ThreadPoolExecutor
 from ScreenplayProcessor import extract_features
-
+from concurrent.futures import ThreadPoolExecutor
 
 
 # Methods
@@ -27,7 +26,7 @@ def load_screenplay(file_path):
 
 
 def load_train_screenplays():
-    (Path.cwd() / "Classifier").mkdir(parents=True, exist_ok=True)
+    constants.classifier_path.mkdir(parents=True, exist_ok=True)
 
     if not Path.exists(constants.train_screenplays_directory):
         raise FileNotFoundError("TrainScreenplays directory not found.")
@@ -38,7 +37,8 @@ def load_train_screenplays():
         trained_screenplays_titles = pandas.read_csv(constants.train_csv_path, usecols=["Title"]).Title
         trained_screenplays_paths = map(lambda title: constants.train_screenplays_directory / f"{title}.txt",
                                         trained_screenplays_titles)
-        train_screenplays_paths = filter(lambda path: path not in trained_screenplays_paths, train_screenplays_paths)
+        train_screenplays_paths = list(filter(lambda path: path not in trained_screenplays_paths,
+                                              train_screenplays_paths))
 
     batch_size = multiprocessing.cpu_count()
     batch_count = math.ceil(len(train_screenplays_paths) / batch_size)
@@ -58,9 +58,11 @@ def load_train_screenplays():
                                      index=False,
                                      header=not constants.train_csv_path.exists())
 
-            print(f"{datetime.datetime.now()}: screenplays records were written to csv file.")
+            print(f"{datetime.now()}: screenplays records were written to csv file.")
 
-    print(f"{datetime.datetime.now()}: Processing ended.")
+    pandas.read_csv(constants.train_csv_path).merge(load_genres()).to_csv(constants.train_csv_path, index=False)
+
+    print(f"{datetime.now()}: Processing ended.")
 
 
 def load_test_screenplays(file_paths):
