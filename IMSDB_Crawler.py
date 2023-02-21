@@ -8,11 +8,11 @@ from typing import Set, Optional
 
 from ScriptInfo import ScriptInfo
 
-import constants
+import Constants
 
 IMSDB_ROOT = "http://www.imsdb.com"
 
-constants.train_screenplays_paths.mkdir(parents=True, exist_ok=True)
+Constants.train_screenplays_paths.mkdir(parents=True, exist_ok=True)
 
 
 def get_movie_info_links_from_genre(genre: str) -> Optional[Set[str]]:
@@ -56,7 +56,7 @@ def get_script_information(movie_info_url: str) -> Optional[ScriptInfo]:
 
     genre_links = details_table.find_all("a", title=re.compile("Scripts$"))
     genres = {genre["href"][len("/genre/"):] for genre in genre_links}
-    genres = set(filter(lambda g: g in constants.genre_labels, genres))
+    genres = set(filter(lambda g: g in Constants.genre_labels, genres))
 
     return ScriptInfo(as_filename_compatible(title), movie_info_url, script_url, genres)
 
@@ -81,7 +81,7 @@ def get_movie_script(script_url: str) -> Optional[str]:
 
 def write_script_to_file(script_title: str, script_text: str) -> None:
     script_title = re.sub(r"[^\w\-_. ]+", "_", script_title)
-    script_file_path = constants.train_screenplays_paths / (script_title + ".txt")
+    script_file_path = Constants.train_screenplays_paths / (script_title + ".txt")
     script_file_path.write_text(script_text, encoding="utf-8")
 
 
@@ -117,7 +117,7 @@ def process_info_url(info_url: str) -> Optional[dict]:
 def scrape_from_scratch():
     all_urls = set()
 
-    for genre in tqdm(constants.genre_labels, desc="processing genres"):
+    for genre in tqdm(Constants.genre_labels, desc="processing genres"):
         genre_urls = get_movie_info_links_from_genre(genre)
         all_urls = all_urls.union(genre_urls)
 
@@ -129,19 +129,19 @@ def scrape_from_scratch():
 
     movie_info = sorted(movie_info, key=lambda info: info["title"])
 
-    with constants.movie_info_path.open("w") as f:
+    with Constants.movie_info_path.open("w") as f:
         json.dump(movie_info, f)
 
 
 def scrape_from_existing():
-    movie_info = ScriptInfo.schema().loads(constants.movie_info_path.read_text(), many=True)
+    movie_info = ScriptInfo.schema().loads(Constants.movie_info_path.read_text(), many=True)
 
     with multiprocessing.Pool(4) as pool:
         list(tqdm(pool.imap(process_script_info, movie_info), total=len(movie_info), desc="processing script info"))
 
 
 if __name__ == "__main__":
-    if constants.movie_info_path.exists():
+    if Constants.movie_info_path.exists():
         scrape_from_existing()
     else:
         scrape_from_scratch()

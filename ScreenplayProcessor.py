@@ -2,7 +2,7 @@
 import re
 import spacy
 import datetime
-import constants
+import Constants
 from textblob import TextBlob
 from nltk.corpus import stopwords
 from transformers import pipeline
@@ -121,7 +121,7 @@ def get_protagonist_role(text):
 
     # Predicts the protagonist's role by his/her actions
     action_genres = ["Drama"] if len(actions) == 0 or protagonist == "UNKNOWN" \
-        else zero_shot_pipeline(actions, constants.genre_labels, multi_label=True)["labels"]
+        else zero_shot_pipeline(actions, Constants.genre_labels, multi_label=True)["labels"]
 
     return {"Protagonist Roles": protagonist_roles_dict[action_genres[0]]}
 

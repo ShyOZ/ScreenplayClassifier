@@ -3,7 +3,8 @@ import math
 import time
 import pandas
 
-import constants
+import Classifier
+import Constants
 import multiprocessing
 from pathlib import Path
 from datetime import datetime
@@ -27,16 +28,16 @@ def load_screenplay(file_path):
 
 
 def load_train_screenplays():
-    constants.classifier_path.mkdir(parents=True, exist_ok=True)
+    Constants.classifier_path.mkdir(parents=True, exist_ok=True)
 
-    if not Path.exists(constants.train_screenplays_directory):
+    if not Path.exists(Constants.train_screenplays_directory):
         raise FileNotFoundError("TrainScreenplays directory not found.")
 
-    train_screenplays_paths = constants.train_screenplays_paths
+    train_screenplays_paths = Constants.train_screenplays_paths
 
-    if Path.exists(constants.train_csv_path):
-        trained_screenplays_titles = pandas.read_csv(constants.train_csv_path, usecols=["Title"]).Title
-        trained_screenplays_paths = map(lambda title: constants.train_screenplays_directory / f"{title}.txt",
+    if Path.exists(Constants.train_csv_path):
+        trained_screenplays_titles = pandas.read_csv(Constants.train_csv_path, usecols=["Title"]).Title
+        trained_screenplays_paths = map(lambda title: Constants.train_screenplays_directory / f"{title}.txt",
                                         trained_screenplays_titles)
         train_screenplays_paths = list(filter(lambda path: path not in trained_screenplays_paths,
                                               train_screenplays_paths))
@@ -54,14 +55,14 @@ def load_train_screenplays():
             screenplays_batch = [thread.result() for thread in screenplay_threads]
 
             screenplays_batch = pandas.DataFrame(screenplays_batch)
-            screenplays_batch.to_csv(constants.train_csv_path,
+            screenplays_batch.to_csv(Constants.train_csv_path,
                                      mode="a",
                                      index=False,
-                                     header=not constants.train_csv_path.exists())
+                                     header=not Constants.train_csv_path.exists())
 
             print(f"{datetime.now()}: screenplays records were written to csv file.")
 
-    pandas.read_csv(constants.train_csv_path).merge(load_genres()).to_csv(constants.train_csv_path, index=False)
+    pandas.read_csv(Constants.train_csv_path).merge(load_genres()).to_csv(Constants.train_csv_path, index=False)
 
     print(f"{datetime.now()}: Processing ended.")
 
@@ -78,7 +79,7 @@ def load_test_screenplays(file_paths):
 
 
 def load_genres():
-    movie_info = ScriptInfo.schema().loads(constants.movie_info_path.read_text(), many=True)
+    movie_info = ScriptInfo.schema().loads(Constants.movie_info_path.read_text(), many=True)
 
     genres_dict = {screenplay_info.title: list(screenplay_info.genres) for screenplay_info in movie_info}
 

@@ -3,7 +3,7 @@ import time
 import numpy
 import pandas
 import pickle
-import constants
+import Constants
 import ScreenplayProcessor
 from Loader import load_test_screenplays
 from sklearn.metrics import accuracy_score
@@ -16,14 +16,14 @@ from sklearn.preprocessing import MultiLabelBinarizer
 # Methods
 def save_model(model):
     # Writes model variables to pickle file
-    pickle_file = open(constants.model_pickle_path, "wb")
+    pickle_file = open(Constants.model_pickle_path, "wb")
     pickle.dump(model, pickle_file)
     pickle_file.close()
 
 
 def create_model():
     # Creates a classification model
-    train_screenplays = encode(pandas.read_csv(constants.train_csv_path))
+    train_screenplays = pandas.read_csv(Constants.train_csv_path)
 
     t = MultiLabelBinarizer().fit_transform(train_screenplays["Genres"])
     x = train_screenplays.drop(["Title", "Genres"], axis=1)
@@ -44,38 +44,20 @@ def create_model():
 
     return classifier
 
-
 def load_model():
     # Validates existence of pickle file
-    if not constants.model_pickle_path.exists():
+    if not Constants.model_pickle_path.exists():
         return create_model()
 
     # Reads model variables from pickle file
-    pickle_file = open(constants.model_pickle_path, "rb")
+    pickle_file = open(Constants.model_pickle_path, "rb")
     model = pickle.load(pickle_file)
     pickle_file.close()
 
     return model
 
-
-def encode(screenplays):
-    # Encodes the textual values in the screenplays dataframe
-    topics = list(ScreenplayProcessor.genre_topics_dict.values())
-    protagonist_roles = list(ScreenplayProcessor.protagonist_roles_dict.values())
-
-    screenplays.replace({"Topics": {topic: topics.index(topic) for topic in topics},
-                         "Protagonist Roles": {role: protagonist_roles.index(role) for role in protagonist_roles},
-                         "Time Period": {period: ScreenplayProcessor.time_periods.index(period)
-                                         for period in ScreenplayProcessor.time_periods},
-                         "Dominant Time of Day": {dom_time: ScreenplayProcessor.times_of_day.index(dom_time)
-                                                  for dom_time in ScreenplayProcessor.times_of_day}},
-                        inplace=True)
-
-    return screenplays
-
-
 def probabilities_to_percentages(probabilities):
-    probabilities_dict = dict(zip(constants.genre_labels, probabilities))
+    probabilities_dict = dict(zip(Constants.genre_labels, probabilities))
     probabilities_dict = dict(sorted(probabilities_dict.items(), key=lambda item: item[1], reverse=True))
     sum_of_probabilities = sum(probabilities)
     percentages_dict = {}
@@ -89,7 +71,7 @@ def probabilities_to_percentages(probabilities):
 
 def classify(file_paths):
     # Loads classification model
-    screenplays = encode(load_test_screenplays(file_paths))
+    screenplays = load_test_screenplays(file_paths)
     classifier = load_model()
     classifications_dict = {}
     classifications_complete = 0
