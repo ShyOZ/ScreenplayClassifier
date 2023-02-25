@@ -4,7 +4,6 @@ import numpy
 import pandas
 import pickle
 import Constants
-import ScreenplayProcessor
 from Loader import load_test_screenplays
 from sklearn.metrics import accuracy_score
 from sklearn.multiclass import OneVsRestClassifier
@@ -12,14 +11,12 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MultiLabelBinarizer
 
-
 # Methods
 def save_model(model):
     # Writes model variables to pickle file
     pickle_file = open(Constants.model_pickle_path, "wb")
     pickle.dump(model, pickle_file)
     pickle_file.close()
-
 
 def create_model():
     # Creates a classification model
@@ -67,7 +64,6 @@ def probabilities_to_percentages(probabilities):
         percentages_dict[genre] = (probability / sum_of_probabilities) * 100
 
     return percentages_dict
-
 
 def classify(file_paths):
     # Loads classification model

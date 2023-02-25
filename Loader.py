@@ -2,8 +2,6 @@
 import math
 import time
 import pandas
-
-import Classifier
 import Constants
 import multiprocessing
 from pathlib import Path
@@ -11,7 +9,6 @@ from datetime import datetime
 from ScriptInfo import ScriptInfo
 from ScreenplayProcessor import extract_features
 from concurrent.futures import ThreadPoolExecutor
-
 
 # Methods
 def load_screenplay(file_path):
@@ -25,7 +22,6 @@ def load_screenplay(file_path):
     print(f"{datetime.now()}: {screenplay_title} processed.")
 
     return screenplay_features
-
 
 def load_train_screenplays():
     Constants.classifier_path.mkdir(parents=True, exist_ok=True)
@@ -66,7 +62,6 @@ def load_train_screenplays():
 
     print(f"{datetime.now()}: Processing ended.")
 
-
 def load_test_screenplays(file_paths):
     # Loads and processes each screenplay
     batch_size = len(file_paths)
@@ -77,21 +72,9 @@ def load_test_screenplays(file_paths):
 
     return pandas.DataFrame(screenplay_records)
 
-
 def load_genres():
     movie_info = ScriptInfo.schema().loads(Constants.movie_info_path.read_text(), many=True)
 
     genres_dict = {screenplay_info.title: list(screenplay_info.genres) for screenplay_info in movie_info}
 
     return pandas.DataFrame({"Title": genres_dict.keys(), "Genres": genres_dict.values()})
-
-
-# Main
-if __name__ == "__main__":
-    ...
-
-    """
-    OUTPUT EXAMPLE:
-    Title               |   GenrePercentages        
-    "American Psycho"       {"Action": 22.43, "Adventure": 14.88 ... }
-    """

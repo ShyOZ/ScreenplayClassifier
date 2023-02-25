@@ -13,9 +13,7 @@ zero_shot_pipeline = pipeline("zero-shot-classification", model="oigele/Fb_impro
 entities_pipeline = spacy.load("en_core_web_sm")
 
 times_of_day = ["Daytime", "Nighttime"]
-
 time_periods = ["Past", "Present", "Future"]
-
 protagonist_roles_dict = {
     "Action": "Fighter",
     "Adventure": "Traveller/Explorer",
@@ -30,9 +28,7 @@ protagonist_roles_dict = {
     "Thriller": "Detective/Spy",
     "War": "Soldier"
 }
-
 emotion_labels = ["Anger", "Fear", "Joy", "Love", "Sadness", "Surprise"]
-
 genre_topics_dict = {
     "Action": "Violence, Danger, Chase",
     "Adventure": "Exploration, Journey",
@@ -48,11 +44,8 @@ genre_topics_dict = {
     "War": "War, Death, Politics"
 }
 
-
 # Methods
 def get_dominant_time_of_day(text):
-    # return {"Dominant Time of Day": times_of_day[random.randint(0, 1)]}
-
     daytime_counter, nighttime_counter = 0, 0
     dusk_time, dawn_time = datetime.time(18), datetime.time(6)
 
@@ -76,10 +69,7 @@ def get_dominant_time_of_day(text):
 
     return {"Dominant Time of Day": "Daytime" if daytime_counter > nighttime_counter else "Nighttime"}
 
-
 def get_time_period(text):
-    # return {"Time Period": time_periods[random.randint(0, 2)]}
-
     past_counter, present_counter, future_counter = 0, 0, 0
 
     # Retrieves the time period of the setting
@@ -98,7 +88,6 @@ def get_time_period(text):
 
     return {"Time Period": time_period}
 
-
 def clean_words(words):
     # Cleans the words from punctuation
     words = [re.sub(r"[^\w\s]", "", w) for w in words]
@@ -109,12 +98,7 @@ def clean_words(words):
 
     return words
 
-
 def get_protagonist_role(text):
-    # random_genre = genre_labels[random.randint(0, len(genre_labels) - 1)]
-    #
-    # return {"Protagonist Roles": protagonist_roles_dict[random_genre]}
-
     # Extracts protagonist's actions from text
     blob, protagonist = TextBlob(text), get_protagonist(text)
     actions = " ".join([str(sentence) for sentence in blob.sentences if sentence.startswith(protagonist + " ")])
@@ -125,9 +109,7 @@ def get_protagonist_role(text):
 
     return {"Protagonist Roles": protagonist_roles_dict[action_genres[0]]}
 
-
 def get_protagonist(text):
-    # pass
     # Extracts character names from text
     blob = TextBlob(text)
     proper_nouns = [word[0] for word in blob.pos_tags if word[1] == "NNP"]
@@ -146,19 +128,7 @@ def get_protagonist(text):
 
     return protagonist.capitalize()
 
-
 def get_emotions(text):
-    # emotion_scores = [0 for emotion in emotion_labels]
-    #
-    # while emotion_scores.count(0) > 1:
-    #     offset = random.randint(0, 5)
-    #     if emotion_scores[offset] == 0:
-    #         emotion_scores[offset] = random.uniform(0, 1 - sum(emotion_scores))
-    #
-    # emotion_scores[emotion_scores.index(0)] = 1 - sum(emotion_scores)
-    #
-    # return dict(zip(emotion_labels, emotion_scores))
-
     # Organizes emotions and their percentages in dictionary
     emotions_scores = sum(emotions_pipeline(text, truncation=True), [])  # Flattens the list
     keys = [emotion_label for emotion_label in emotion_labels]
@@ -168,7 +138,6 @@ def get_emotions(text):
         emotion_scores_dict[emotion["label"].capitalize()] = emotion["score"]
 
     return emotion_scores_dict
-
 
 def extract_features(screenplay_title, screenplay_text):
     # Extracts features by the screenplay text
