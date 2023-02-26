@@ -15,4 +15,3 @@ train_screenplays_directory = Path("TrainScreenplays")
 test_screenplays_directory = Path("TestScreenplays")
 train_screenplays_paths = list(train_screenplays_directory.glob("*.txt"))
 test_screenplays_paths = list(test_screenplays_directory.glob("*.txt"))
-

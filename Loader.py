@@ -19,8 +19,6 @@ def load_screenplay(file_path):
 
     time.sleep(0.01)
 
-    print(f"{datetime.now()}: {screenplay_title} processed.")
-
     return screenplay_features
 
 def load_train_screenplays():

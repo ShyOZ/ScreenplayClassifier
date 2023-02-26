@@ -29,20 +29,6 @@ protagonist_roles_dict = {
     "War": "Soldier"
 }
 emotion_labels = ["Anger", "Fear", "Joy", "Love", "Sadness", "Surprise"]
-genre_topics_dict = {
-    "Action": "Violence, Danger, Chase",
-    "Adventure": "Exploration, Journey",
-    "Comedy": "Amusement, Laughter",
-    "Crime": "Crime, Trial",
-    "Drama": "Conflict, Crisis, Tragedy",
-    "Family": "Adolescence, Care, Friendship",
-    "Fantasy": "Supernatural, Magic, Wonder",
-    "Horror": "Terror, Disgust, Murder, Gore",
-    "Romance": "Emotion, Lust, Relationship",
-    "SciFi": "Science, Technology, Space, Future",
-    "Thriller": "Espionage, Conspiracy, Cunning",
-    "War": "War, Death, Politics"
-}
 
 # Methods
 def get_dominant_time_of_day(text):
