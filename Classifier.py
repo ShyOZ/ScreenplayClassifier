@@ -3,17 +3,16 @@ import time
 import numpy
 import pandas
 import pickle
+
+from sklearn.ensemble import BaggingClassifier
+
 import Constants
 from Loader import load_test_screenplays
 from ScreenplayProcessor import protagonist_roles_dict, time_periods, times_of_day
 from sklearn.metrics import accuracy_score
 from sklearn.multioutput import MultiOutputClassifier
-from sklearn.naive_bayes import CategoricalNB
-from sklearn.linear_model import LogisticRegression
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import MultiLabelBinarizer
 
 # Methods
@@ -34,6 +33,13 @@ def encode(screenplays):
 
     return screenplays
 
+def get_optimal_amount_of_estimators(x, t, base_estimator):
+    hyper_parameters = {"n_estimators": list(range(10, 21)), "bootstrap": [True, False]}
+    gridSearch = GridSearchCV(BaggingClassifier(base_estimator=base_estimator, random_state=42), hyper_parameters,
+                              scoring="neg_log_loss").fit(x, t)
+
+    return gridSearch.best_params_["n_estimators"], gridSearch.best_params_["bootstrap"]
+
 def create_model():
     # Creates a classification model
     train_screenplays = encode(pandas.read_csv(Constants.train_csv_path))
@@ -41,21 +47,24 @@ def create_model():
 
     t = MultiLabelBinarizer().fit_transform(train_screenplays["Genres"])
     x = train_screenplays.drop(["Title", "Genres"], axis=1)
-    x_train, x_validation, y_train, y_validation = train_test_split(x, t, test_size=0.2, random_state=1)
+    x_train, x_validation, t_train, t_validation = train_test_split(x, t, test_size=0.2, random_state=42)
 
-    # Builds classifier and predicts its accuracy score (currently-best estimator: SVC (0.1179))
-    # TOOD: find the best estimator and improve it with hyper_parameters
-    base_model = MultiOutputClassifier(estimator=SVC())
-    classifier = base_model.fit(x_train, y_train)
+    # Builds classifier and predicts its accuracy score (current best: SVC - 0.1441)
+    base_estimator = MultiOutputClassifier(SVC(probability=True)).fit(x_train, t_train)
+    # TODO: IMPROVE BASE ESTIMATOR USING HYPER_PARAMETERS & ENSEMBLES
+    # best_amount_of_estimators, using_bootstrap = get_optimal_amount_of_estimators(x_train, t_train, base_estimator)
+    # ensembles_classifier = BaggingClassifier(base_estimator=base_estimator, n_estimators=best_amount_of_estimators,
+    #                                          bootstrap=using_bootstrap, random_state=1).fit(x_train, t_train)
+    classifier = base_estimator
 
-    y_predictions = classifier.predict(x_validation)
-    score = accuracy_score(y_validation, y_predictions)
+    t_predictions = classifier.predict(x_validation)
+    score = accuracy_score(t_validation, t_predictions)
     print("Accuracy: {:.4f}".format(score))
 
     # Saves model variables to file
-    # save_model(classifier)
+    save_model(classifier)
 
-    # return classifier
+    return classifier
 
 def load_model():
     # Validates existence of pickle file
@@ -82,26 +91,24 @@ def probabilities_to_percentages(probabilities):
     return percentages_dict
 
 def classify(file_paths):
-    # Loads classification model
-    # screenplays = encode(load_test_screenplays(file_paths))
+    # Loads test screenplays and classification model
+    test_screenplays = encode(load_test_screenplays(file_paths))
     classifier = load_model()
-    # classifications_dict = {}
-    # classifications_complete = 0
+    classifications_dict = {}
+    classifications_complete = 0
 
-    # TODO: Figure out the test_probabilities
-    # for offset, screenplay in screenplays.iterrows():
-    #     features_vector = [x[0] for x in numpy.array(screenplay[1:]).reshape(-1, 1)]
-    #     test_probabilities = classifier.predict_proba([features_vector])
-    #     print(test_probabilities)
-
-        # test_percentages = probabilities_to_percentages(test_probabilities)
-        # classifications_dict[file_paths[offset]] = test_percentages
+    # Classifies the test screenplays
+    for offset, screenplay in test_screenplays.iterrows():
+        features_vector = [feature[0] for feature in numpy.array(screenplay[1:]).reshape(-1, 1)]
+        genre_probabilities = [probability.tolist()[0] for probability in classifier.predict_proba([features_vector])]
+        genre_probabilities = [probability[0] for probability in genre_probabilities]
+        classifications_dict[file_paths[offset]] = probabilities_to_percentages(genre_probabilities)
 
         # Prints progress (for GUI to update progress)
-        # classifications_complete += 1
-        # print(classifications_complete)
+        classifications_complete += 1
+        print(classifications_complete)
 
-        # time.sleep(0.5)  # seconds
+        time.sleep(0.5)  # seconds
 
-    # return pandas.DataFrame({"FilePath": classifications_dict.keys(),
-    #                          "GenrePercentages": classifications_dict.values()})
+    return pandas.DataFrame({"FilePath": classifications_dict.keys(),
+                             "GenrePercentages": classifications_dict.values()})
