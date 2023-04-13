@@ -15,12 +15,14 @@ from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import MultiLabelBinarizer
 
+
 # Methods
 def save_model(model):
     # Writes model variables to pickle file
     pickle_file = open(Constants.model_pickle_path, "wb")
     pickle.dump(model, pickle_file)
     pickle_file.close()
+
 
 def encode(screenplays):
     # Encodes the textual values in the screenplays dataframe
@@ -33,12 +35,14 @@ def encode(screenplays):
 
     return screenplays
 
+
 def get_optimal_amount_of_estimators(x, t, base_estimator):
     hyper_parameters = {"n_estimators": list(range(10, 21)), "bootstrap": [True, False]}
     gridSearch = GridSearchCV(VotingClassifier(base_estimator=base_estimator, random_state=42), hyper_parameters,
                               scoring="neg_log_loss").fit(x, t)
 
     return gridSearch.best_params_["n_estimators"], gridSearch.best_params_["bootstrap"]
+
 
 def create_model():
     # Creates a classification model
@@ -62,6 +66,7 @@ def create_model():
 
     return classifier
 
+
 def load_model():
     # Validates existence of pickle file
     if not Constants.model_pickle_path.exists():
@@ -74,6 +79,7 @@ def load_model():
 
     return model
 
+
 def probabilities_to_percentages(probabilities):
     probabilities_dict = dict(zip(Constants.genre_labels, probabilities))
     probabilities_dict = dict(sorted(probabilities_dict.items(), key=lambda item: item[1], reverse=True))
@@ -85,6 +91,7 @@ def probabilities_to_percentages(probabilities):
         percentages_dict[genre] = (probability / sum_of_probabilities) * 100
 
     return percentages_dict
+
 
 def classify(file_paths):
     # Loads test screenplays and classification model

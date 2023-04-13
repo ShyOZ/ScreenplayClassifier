@@ -34,6 +34,7 @@ emotions = {
     "Negative": ["Sadness", "Fear"]
 }
 
+
 # Methods
 def get_dominant_time_of_day(text):
     daytime_counter, nighttime_counter = 0, 0
@@ -59,6 +60,7 @@ def get_dominant_time_of_day(text):
 
     return {"Dominant Time of Day": "Daytime" if daytime_counter > nighttime_counter else "Nighttime"}
 
+
 def get_time_period(text):
     past_counter, present_counter, future_counter = 0, 0, 0
 
@@ -78,6 +80,7 @@ def get_time_period(text):
 
     return {"Time Period": time_period}
 
+
 def clean_words(words):
     # Cleans the words from punctuation
     words = [re.sub(r"[^\w\s]", "", w) for w in words]
@@ -88,17 +91,19 @@ def clean_words(words):
 
     return words
 
+
 def get_protagonist_role(text):
     # Extracts protagonist's actions from text
     blob, protagonist = TextBlob(text), get_protagonist(text)
     actions = " ".join([str(sentence) for sentence in blob.sentences if sentence.startswith(protagonist + " ")])
 
     # Predicts the protagonist's role by his/her actions
-    actions_genre = "Drama" if len(actions) == 0 or protagonist == "UNKNOWN"\
+    actions_genre = "Drama" if len(actions) == 0 or protagonist == "UNKNOWN" \
         else Constants.genre_labels[random.randrange(len(Constants.genre_labels))]
     # else zero_shot_pipeline(actions, Constants.genre_labels, multi_label=True)["labels"]
 
     return {"Protagonist Roles": protagonist_roles_dict[actions_genre]}
+
 
 def get_protagonist(text):
     # Extracts character names from text
@@ -119,9 +124,10 @@ def get_protagonist(text):
 
     return protagonist.capitalize()
 
+
 def get_emotions(text):
     # Organizes emotions and their percentages in dictionary
-    emotion_labels = sum([emotion for emotion in emotions.values()], []) # Flattens the list
+    emotion_labels = sum([emotion for emotion in emotions.values()], [])  # Flattens the list
     sentiment_polarity = TextBlob(text).sentiment.polarity
     sentiment_label = "Positive" if sentiment_polarity > 0 else "Neutral" if sentiment_polarity == 0 else "Negative"
     emotion_scores = [random.uniform(0.5, 1) if emotion in emotions[sentiment_label] else random.uniform(0, 0.5)
@@ -137,6 +143,7 @@ def get_emotions(text):
     #     emotion_scores_dict[emotion["label"].capitalize()] = emotion["score"]
     #
     # return emotion_scores_dict
+
 
 def extract_features(screenplay_title, screenplay_text):
     # Extracts features by the screenplay text

@@ -10,6 +10,7 @@ from ScriptInfo import ScriptInfo
 from ScreenplayProcessor import extract_features
 from concurrent.futures import ThreadPoolExecutor
 
+
 # Methods
 def load_screenplay(file_path):
     # Loads and processes a screenplay by its file path
@@ -20,6 +21,7 @@ def load_screenplay(file_path):
     time.sleep(0.01)
 
     return screenplay_features
+
 
 def load_train_screenplays():
     Constants.classifier_path.mkdir(parents=True, exist_ok=True)
@@ -60,6 +62,7 @@ def load_train_screenplays():
 
     print(f"{datetime.now()}: Processing ended.")
 
+
 def load_test_screenplays(file_paths):
     # Loads and processes each screenplay
     batch_size = len(file_paths)
@@ -69,6 +72,7 @@ def load_test_screenplays(file_paths):
         screenplay_records = [thread.result() for thread in screenplay_threads]
 
     return pandas.DataFrame(screenplay_records)
+
 
 def load_genres():
     movie_info = ScriptInfo.schema().loads(Constants.movie_info_path.read_text(), many=True)
