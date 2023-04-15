@@ -3,18 +3,15 @@ import time
 import numpy
 import pandas
 import pickle
-
-from sklearn.ensemble import VotingClassifier
-
 import Constants
+
 from Loader import load_test_screenplays
-from ScreenplayProcessor import protagonist_roles_dict, time_periods, times_of_day
-from sklearn.metrics import accuracy_score
+from ScreenplayProcessor import time_periods, times_of_day
+from sklearn.ensemble import BaggingClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.multioutput import MultiOutputClassifier
-from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import MultiLabelBinarizer
-
 
 # Methods
 def save_model(model):
@@ -23,26 +20,26 @@ def save_model(model):
     pickle.dump(model, pickle_file)
     pickle_file.close()
 
-
 def encode(screenplays):
     # Encodes the textual values in the screenplays dataframe
-    protagonist_roles = list(protagonist_roles_dict.values())
-
-    screenplays.replace({"Protagonist Roles": {role: protagonist_roles.index(role) for role in protagonist_roles},
-                         "Time Period": {period: time_periods.index(period) for period in time_periods},
-                         "Dominant Time of Day": {time: times_of_day.index(time) for time in times_of_day}},
+    screenplays.replace({"Time Period": {period: time_periods.index(period) for period in time_periods},
+                         "Time of Day": {time: times_of_day.index(time) for time in times_of_day}},
                         inplace=True)
 
     return screenplays
 
+def get_best_amount_of_neighbors(x, t):
+  hyper_params = {"n_neighbors": list(range(1, 20))}
+  grid_search = GridSearchCV(KNeighborsClassifier(n_neighbors=5), hyper_params).fit(x, t)
 
-def get_optimal_amount_of_estimators(x, t, base_estimator):
-    hyper_parameters = {"n_estimators": list(range(10, 21)), "bootstrap": [True, False]}
-    gridSearch = GridSearchCV(VotingClassifier(base_estimator=base_estimator, random_state=42), hyper_parameters,
-                              scoring="neg_log_loss").fit(x, t)
+  return grid_search.best_params_["n_neighbors"]
 
-    return gridSearch.best_params_["n_estimators"], gridSearch.best_params_["bootstrap"]
+def get_best_amount_of_estimators(x, t, base_estimator):
+  hyper_params = {"n_estimators": list(range(10, 21)), "bootstrap": [True, False]}
+  grid_search = GridSearchCV(BaggingClassifier(base_estimator=base_estimator, random_state=1), hyper_params,
+                             scoring="neg_log_loss").fit(x, t)
 
+  return grid_search.best_params_["n_estimators"], grid_search.best_params_["bootstrap"]
 
 def create_model():
     # Creates a classification model
@@ -53,19 +50,20 @@ def create_model():
     x = train_screenplays.drop(["Title", "Genres"], axis=1)
     x_train, x_validation, t_train, t_validation = train_test_split(x, t, test_size=0.2, random_state=42)
 
-    # Builds classifier and predicts its accuracy score (current best: SVC - 0.1441)
-    base_estimator = MultiOutputClassifier(SVC(probability=True)).fit(x_train, t_train)
-    classifier = base_estimator
+    # Builds classifier and predicts its accuracy score (current best: SVC(probability=True) - 0.1441)
+    base_estimator = KNeighborsClassifier(n_neighbors=get_best_amount_of_neighbors).fit(x, t)
+    amount_of_estimators, using_bootstrap = get_best_amount_of_estimators(x, t, base_estimator)
+    ensembles_classifier = BaggingClassifier(base_estimator=base_estimator, n_estimators=amount_of_estimators,
+                                             bootstrap=using_bootstrap, random_state=1).fit(x, t)
 
-    t_predictions = classifier.predict(x_validation)
-    score = accuracy_score(t_validation, t_predictions)
+    classifier = MultiOutputClassifier(ensembles_classifier)
+    score = classifier.score(x, t).mean()
     print("Accuracy: {:.4f}".format(score))
 
-    # Saves model variables to file
+    # Saves the model to file
     save_model(classifier)
 
     return classifier
-
 
 def load_model():
     # Validates existence of pickle file
@@ -79,8 +77,8 @@ def load_model():
 
     return model
 
-
 def probabilities_to_percentages(probabilities):
+    # Creates a sorted probabilities dictionary
     probabilities_dict = dict(zip(Constants.genre_labels, probabilities))
     probabilities_dict = dict(sorted(probabilities_dict.items(), key=lambda item: item[1], reverse=True))
     sum_of_probabilities = sum(probabilities)
@@ -91,7 +89,6 @@ def probabilities_to_percentages(probabilities):
         percentages_dict[genre] = (probability / sum_of_probabilities) * 100
 
     return percentages_dict
-
 
 def classify(file_paths):
     # Loads test screenplays and classification model
