@@ -8,7 +8,7 @@ import multiprocessing
 from pathlib import Path
 from datetime import datetime
 from ScriptInfo import ScriptInfo
-from ScreenplayProcessor import extract_features
+#from ScreenplayProcessor import extract_features
 from concurrent.futures import ThreadPoolExecutor
 
 # Methods
@@ -16,11 +16,11 @@ def load_screenplay(file_path):
     # Loads and processes a screenplay by its file path
     screenplay_title = Path(file_path).stem
     screenplay_text = open(file_path, "r", encoding="utf8").read()
-    screenplay_features = extract_features(screenplay_title, screenplay_text)
+    # screenplay_features = extract_features(screenplay_title, screenplay_text)
 
     time.sleep(0.01)
 
-    return screenplay_features
+    return {"Title": screenplay_title, "Text": screenplay_text}
 
 def load_train_screenplays():
     # Validates existence of required directories

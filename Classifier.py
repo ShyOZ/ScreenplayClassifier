@@ -6,27 +6,41 @@ import pickle
 import Constants
 
 from Loader import load_test_screenplays
-from ScreenplayProcessor import time_periods, times_of_day
+#from ScreenplayProcessor import time_periods, times_of_day
 from sklearn.ensemble import BaggingClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import MultiLabelBinarizer
 
+from ScreenplayProcessor import TOKENIZER, MAX_SEQUENCE_LENGTH, create_nn_model
+
 # Methods
+def load_model():
+    # Validates existence of pickle file
+    if not Constants.model_pickle_path.exists():
+        return create_nn_model() # create_ml_model()
+
+    # Reads model variables from pickle file
+    pickle_file = open(Constants.model_pickle_path, "rb")
+    model = pickle.load(pickle_file)
+    pickle_file.close()
+
+    return model
+
 def save_model(model):
     # Writes model variables to pickle file
     pickle_file = open(Constants.model_pickle_path, "wb")
     pickle.dump(model, pickle_file)
     pickle_file.close()
 
-def encode(screenplays):
-    # Encodes the textual values in the screenplays dataframe
-    screenplays.replace({"Time Period": {period: time_periods.index(period) for period in time_periods},
-                         "Time of Day": {time: times_of_day.index(time) for time in times_of_day}},
-                        inplace=True)
-
-    return screenplays
+# def encode(screenplays):
+#     # Encodes the textual values in the screenplays dataframe
+#     screenplays.replace({"Time Period": {period: time_periods.index(period) for period in time_periods},
+#                          "Time of Day": {time: times_of_day.index(time) for time in times_of_day}},
+#                         inplace=True)
+#
+#     return screenplays
 
 def get_best_amount_of_neighbors(x, t):
   hyper_params = {"n_neighbors": list(range(1, 20))}
@@ -41,9 +55,9 @@ def get_best_amount_of_estimators(x, t, base_estimator):
 
   return grid_search.best_params_["n_estimators"], grid_search.best_params_["bootstrap"]
 
-def create_model():
+def create_ml_model():
     # Creates a classification model
-    train_screenplays = encode(pandas.read_csv(Constants.train_csv_path))
+    train_screenplays = pandas.read_csv(Constants.train_csv_path)
     train_screenplays["Genres"] = [eval(genres) for genres in train_screenplays["Genres"]]
 
     t = MultiLabelBinarizer().fit_transform(train_screenplays["Genres"])
@@ -65,18 +79,6 @@ def create_model():
 
     return classifier
 
-def load_model():
-    # Validates existence of pickle file
-    if not Constants.model_pickle_path.exists():
-        return create_model()
-
-    # Reads model variables from pickle file
-    pickle_file = open(Constants.model_pickle_path, "rb")
-    model = pickle.load(pickle_file)
-    pickle_file.close()
-
-    return model
-
 def probabilities_to_percentages(probabilities):
     # Creates a sorted probabilities dictionary
     probabilities_dict = dict(zip(Constants.genre_labels, probabilities))
@@ -92,17 +94,22 @@ def probabilities_to_percentages(probabilities):
 
 def classify(file_paths):
     # Loads test screenplays and classification model
-    test_screenplays = encode(load_test_screenplays(file_paths))
-    classifier = load_model()
+    test_screenplays = load_test_screenplays(file_paths)
+    model = load_model()
     classifications_dict = {}
     classifications_complete = 0
 
+    # Tokenizes the screenplays' texts (NN way)
+    sequences = TOKENIZER.texts_to_sequences(test_screenplays["Text"])
+    sequences_matrix = sequences.pad_sequences(sequences, max_len=MAX_SEQUENCE_LENGTH)
+    predictions = pandas.DataFrame(model.predict(sequences_matrix), columns=Constants.genre_labels)
+
     # Classifies the test screenplays
     for offset, screenplay in test_screenplays.iterrows():
-        features_vector = [feature[0] for feature in numpy.array(screenplay[1:]).reshape(-1, 1)]
-        genre_probabilities = [probability.tolist()[0] for probability in classifier.predict_proba([features_vector])]
-        genre_probabilities = [probability[0] for probability in genre_probabilities]
-        classifications_dict[file_paths[offset]] = probabilities_to_percentages(genre_probabilities)
+        # features_vector = [feature[0] for feature in numpy.array(screenplay[1:]).reshape(-1, 1)]
+        # genre_probabilities = [probability.tolist()[0] for probability in classifier.predict_proba([features_vector])]
+        # genre_probabilities = [probability[0] for probability in genre_probabilities]
+        classifications_dict[file_paths[offset]] = probabilities_to_percentages(predictions[offset])
 
         # Prints progress (for GUI to update progress)
         classifications_complete += 1
