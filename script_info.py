@@ -9,6 +9,7 @@ from marshmallow import fields
 @dataclass(frozen=True)
 class ScriptInfo:
     title: str
+    filename: str
     info_url: str
     script_url: str
     genres: Set[str] = field(metadata=config(encoder=list,

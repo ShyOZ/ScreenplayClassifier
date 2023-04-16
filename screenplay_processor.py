@@ -3,46 +3,13 @@
 import pickle
 import pandas
 
-import Constants
+import constants
 
-from keras.models import Model
-from keras.layers import LSTM, Activation, Dense, Dropout, Input, Embedding
-from keras_preprocessing import sequence
-from keras_preprocessing.text import Tokenizer
 
-# Globals
-MAX_WORDS, MAX_SEQUENCE_LENGTH = 20000, 150
-TOKENIZER = Tokenizer(num_words=MAX_WORDS)
-CLASS_NUM = len(Constants.genre_labels)
-BATCH_SIZE, EPOCH = 128, 15
 
-VALIDATION_SPLIT = 0.2
 
 # Methods
-def create_nn_model(train_screenplays):
-    # Tokenizes the screenplays' texts
-    screenplays_texts = train_screenplays["Text"]
-    Y = pandas.get_dummies(train_screenplays["Genres"])
 
-    TOKENIZER.fit_on_texts(screenplays_texts)
-    sequences = TOKENIZER.texts_to_sequences(screenplays_texts)
-    sequences_matrix = sequences.pad_sequences(sequences, max_len=MAX_SEQUENCE_LENGTH)
-
-    # Builds a Recurrent Neural Network (RNN)
-    inputs = Input(name="inputs", shape=[MAX_SEQUENCE_LENGTH])
-    layer = Embedding(MAX_WORDS, 50, input_length=MAX_SEQUENCE_LENGTH)(inputs)
-    layer = LSTM(100)(layer)
-    layer = Dense(256, activation="elu")(layer)
-    layer = Dropout(0.5)(layer)
-    outputs = Dense(CLASS_NUM, activation="sigmoid", name="outputs")(layer)
-
-    model = Model(inputs=inputs, outputs=outputs)
-    model.compile(loss="categorical_crossentropy", optimizer="Adamax", metrics=["accuracy"])
-    model.fit(sequences_matrix, Y, batch_size=BATCH_SIZE, epochs=EPOCH, validation_split=VALIDATION_SPLIT)
-
-    model.save(Constants.model_pickle_path)
-
-    return model
 
 ############################################# Machine Learning Experiments #############################################
 

@@ -2,37 +2,39 @@
 import math
 import time
 import pandas
-import Constants
+import constants
 import multiprocessing
 
 from pathlib import Path
 from datetime import datetime
-from ScriptInfo import ScriptInfo
-#from ScreenplayProcessor import extract_features
+from script_info import ScriptInfo
+# from ScreenplayProcessor import extract_features
 from concurrent.futures import ThreadPoolExecutor
+
 
 # Methods
 def load_screenplay(file_path):
     # Loads and processes a screenplay by its file path
-    screenplay_title = Path(file_path).stem
+    screenplay_filename = Path(file_path).stem
     screenplay_text = open(file_path, "r", encoding="utf8").read()
     # screenplay_features = extract_features(screenplay_title, screenplay_text)
 
     time.sleep(0.01)
 
-    return {"Title": screenplay_title, "Text": screenplay_text}
+    return {"filename": screenplay_filename, "Text": screenplay_text}
+
 
 def load_train_screenplays():
     # Validates existence of required directories
-    Constants.classifier_path.mkdir(parents=True, exist_ok=True)
-    if not Path.exists(Constants.train_screenplays_directory):
+    constants.classifier_path.mkdir(parents=True, exist_ok=True)
+    if not Path.exists(constants.train_screenplays_directory):
         raise FileNotFoundError("TrainScreenplays directory not found.")
 
     # Retrieves the paths of the train screenplays left to load
-    train_screenplays_paths = Constants.train_screenplays_paths
-    if Path.exists(Constants.train_csv_path):
-        trained_screenplays_titles = pandas.read_csv(Constants.train_csv_path, usecols=["Title"]).Title
-        trained_screenplays_paths = map(lambda title: Constants.train_screenplays_directory / f"{title}.txt",
+    train_screenplays_paths = constants.train_screenplays_paths
+    if Path.exists(constants.train_csv_path):
+        trained_screenplays_titles = pandas.read_csv(constants.train_csv_path, usecols=["Title"]).Title
+        trained_screenplays_paths = map(lambda title: constants.train_screenplays_directory / f"{title}.txt",
                                         trained_screenplays_titles)
         train_screenplays_paths = list(filter(lambda path: path not in trained_screenplays_paths,
                                               train_screenplays_paths))
@@ -55,17 +57,18 @@ def load_train_screenplays():
 
             # Appends the loaded batch to csv file
             screenplays_batch = pandas.DataFrame(screenplays_batch)
-            screenplays_batch.to_csv(Constants.train_csv_path,
+            screenplays_batch.to_csv(constants.train_csv_path,
                                      mode="a",
                                      index=False,
-                                     header=not Constants.train_csv_path.exists())
+                                     header=not constants.train_csv_path.exists())
 
             print(f"{datetime.now()}: screenplays records were written to csv file.")
 
     # Merges the loaded train screenplays with their respective labels
-    pandas.read_csv(Constants.train_csv_path).merge(load_genres()).to_csv(Constants.train_csv_path, index=False)
+    pandas.read_csv(constants.train_csv_path).merge(load_genres()).to_csv(constants.train_csv_path, index=False)
 
     print(f"{datetime.now()}: Processing ended.")
+
 
 def load_test_screenplays(file_paths):
     # Loads the test screenplays using thread for each screenplay
@@ -77,10 +80,13 @@ def load_test_screenplays(file_paths):
 
     return pandas.DataFrame(screenplay_records)
 
+
 def load_genres():
     # Loads the genres labels for the train screenplays
-    movie_info = ScriptInfo.schema().loads(Constants.movie_info_path.read_text(), many=True)
+    movie_info = ScriptInfo.schema().loads(constants.movie_info_path.read_text(), many=True)
 
-    genres_dict = {screenplay_info.title: list(screenplay_info.genres) for screenplay_info in movie_info}
+    screenplays = [[screenplay_info.title,
+                    screenplay_info.filename,
+                    tuple(screenplay_info.genres)] for screenplay_info in movie_info]
 
-    return pandas.DataFrame({"Title": genres_dict.keys(), "Genres": genres_dict.values()})
+    return pandas.DataFrame.from_records(screenplays, columns=["Title", "Filename", "Genres"])

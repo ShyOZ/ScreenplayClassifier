@@ -6,13 +6,11 @@ import multiprocessing
 from bs4 import BeautifulSoup
 from typing import Set, Optional
 
-from ScriptInfo import ScriptInfo
+from script_info import ScriptInfo
 
-import Constants
+import constants
 
 IMSDB_ROOT = "http://www.imsdb.com"
-
-Constants.train_screenplays_paths.mkdir(parents=True, exist_ok=True)
 
 
 def get_movie_info_links_from_genre(genre: str) -> Optional[Set[str]]:
@@ -27,10 +25,14 @@ def get_movie_info_links_from_genre(genre: str) -> Optional[Set[str]]:
     return {IMSDB_ROOT + tag["href"] for tag in link_tags}
 
 
-def as_filename_compatible(title: str) -> str:
+def standardize_title(title: str) -> str:
     if title.endswith(" The"):
         title = "The " + title[:-4]
-    return re.sub(r"[^a-zA-Z0-9\-. ]+", "", title)
+    return title.replace(":", " -")
+
+
+def as_filename_compatible(title: str) -> str:
+    return re.sub(r"[\\/:*?\"<>|.]+", "", standardize_title(title))
 
 
 def get_script_information(movie_info_url: str) -> Optional[ScriptInfo]:
@@ -56,9 +58,9 @@ def get_script_information(movie_info_url: str) -> Optional[ScriptInfo]:
 
     genre_links = details_table.find_all("a", title=re.compile("Scripts$"))
     genres = {genre["href"][len("/genre/"):] for genre in genre_links}
-    genres = set(filter(lambda g: g in Constants.genre_labels, genres))
+    genres = set(filter(lambda g: g in constants.genre_labels, genres))
 
-    return ScriptInfo(as_filename_compatible(title), movie_info_url, script_url, genres)
+    return ScriptInfo(standardize_title(title), as_filename_compatible(title), movie_info_url, script_url, genres)
 
 
 def get_movie_script(script_url: str) -> Optional[str]:
@@ -79,9 +81,8 @@ def get_movie_script(script_url: str) -> Optional[str]:
     return None
 
 
-def write_script_to_file(script_title: str, script_text: str) -> None:
-    script_title = re.sub(r"[^\w\-_. ]+", "_", script_title)
-    script_file_path = Constants.train_screenplays_paths / (script_title + ".txt")
+def write_script_to_file(script_filename: str, script_text: str) -> None:
+    script_file_path = constants.train_screenplays_paths / (script_filename + ".txt")
     script_file_path.write_text(script_text, encoding="utf-8")
 
 
@@ -93,7 +94,7 @@ def process_script_info(script_info: ScriptInfo) -> Optional[dict]:
             if script_text is None:
                 return None
 
-            write_script_to_file(script_info.title, script_text)
+            write_script_to_file(script_info.filename, script_text)
 
             return script_info.to_dict()
 
@@ -117,7 +118,7 @@ def process_info_url(info_url: str) -> Optional[dict]:
 def scrape_from_scratch():
     all_urls = set()
 
-    for genre in tqdm(Constants.genre_labels, desc="processing genres"):
+    for genre in tqdm(constants.genre_labels, desc="processing genres"):
         genre_urls = get_movie_info_links_from_genre(genre)
         all_urls = all_urls.union(genre_urls)
 
@@ -129,19 +130,21 @@ def scrape_from_scratch():
 
     movie_info = sorted(movie_info, key=lambda info: info["title"])
 
-    with Constants.movie_info_path.open("w") as f:
+    with constants.movie_info_path.open("w") as f:
         json.dump(movie_info, f)
 
 
 def scrape_from_existing():
-    movie_info = ScriptInfo.schema().loads(Constants.movie_info_path.read_text(), many=True)
+    movie_info = ScriptInfo.schema().loads(constants.movie_info_path.read_text(), many=True)
 
     with multiprocessing.Pool(4) as pool:
         list(tqdm(pool.imap(process_script_info, movie_info), total=len(movie_info), desc="processing script info"))
 
 
 if __name__ == "__main__":
-    if Constants.movie_info_path.exists():
+    constants.train_screenplays_directory.mkdir(parents=True, exist_ok=True)
+
+    if constants.movie_info_path.exists():
         scrape_from_existing()
     else:
         scrape_from_scratch()

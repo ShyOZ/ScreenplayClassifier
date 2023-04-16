@@ -6,7 +6,9 @@ movie_info_path = Path("Jsons/Movie Script Info.json")
 genres_path = Path("Jsons/Genres.json")
 genre_labels = json.loads(genres_path.read_text())
 
+
 classifier_path = Path("Classifier")
+model_path = classifier_path / "Model"
 model_pickle_path = classifier_path / "Model.pkl"
 train_csv_path = classifier_path / "Train.csv"
 test_csv_path = classifier_path / "Test.csv"
