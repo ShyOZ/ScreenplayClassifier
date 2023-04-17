@@ -14,5 +14,5 @@ from script_info import ScriptInfo
 
 # Main
 if __name__ == "__main__":
-    # run(["python", str(Path.cwd() / "main.py"), "./TrainScreenplays/12.txt"])
-    classifier.create_nn_model()
+    run(["python", str(Path.cwd() / "main.py"), "./TrainScreenplays/12.txt"])
+    # classifier.create_nn_model()

@@ -3,6 +3,13 @@ import time
 import numpy
 import pandas as pd
 import pickle
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.naive_bayes import GaussianNB, MultinomialNB
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+
 import constants
 
 from loader import load_test_screenplays
@@ -29,12 +36,11 @@ BATCH_SIZE, EPOCH = 128, 15
 
 VALIDATION_SPLIT = 0.2
 
-
 # Methods
 def load_ml_model():
     # Validates existence of pickle file
     if not constants.model_pickle_path.exists():
-        return create_nn_model()  # create_ml_model()
+        return create_ml_model()
 
     # Reads model variables from pickle file
     pickle_file = open(constants.model_pickle_path, "rb")
@@ -43,13 +49,11 @@ def load_ml_model():
 
     return model
 
-
 def save_ml_model(model):
     # Writes model variables to pickle file
     pickle_file = open(constants.model_pickle_path, "wb")
     pickle.dump(model, pickle_file)
     pickle_file.close()
-
 
 # def encode(screenplays):
 #     # Encodes the textual values in the screenplays dataframe
@@ -60,19 +64,17 @@ def save_ml_model(model):
 #     return screenplays
 
 def get_best_amount_of_neighbors(x, t):
-    hyper_params = {"n_neighbors": list(range(1, 20))}
+    hyper_params = {"n_neighbors": list(range(5, 15))}
     grid_search = GridSearchCV(KNeighborsClassifier(n_neighbors=5), hyper_params).fit(x, t)
 
     return grid_search.best_params_["n_neighbors"]
 
-
 def get_best_amount_of_estimators(x, t, base_estimator):
-    hyper_params = {"n_estimators": list(range(10, 21)), "bootstrap": [True, False]}
+    hyper_params = {"n_estimators": list(range(5, 10)), "bootstrap": [True, False]}
     grid_search = GridSearchCV(BaggingClassifier(base_estimator=base_estimator, random_state=1), hyper_params,
                                scoring="neg_log_loss").fit(x, t)
 
     return grid_search.best_params_["n_estimators"], grid_search.best_params_["bootstrap"]
-
 
 def create_ml_model():
     # Creates a classification model
@@ -80,16 +82,16 @@ def create_ml_model():
     train_screenplays["Genres"] = [eval(genres) for genres in train_screenplays["Genres"]]
 
     t = MultiLabelBinarizer().fit_transform(train_screenplays["Genres"])
-    x = train_screenplays.drop(["Title", "Genres"], axis=1)
+    x = train_screenplays.drop(["Title", "Filename", "Genres"], axis=1)
     x_train, x_validation, t_train, t_validation = train_test_split(x, t, test_size=0.2, random_state=42)
 
-    # Builds classifier and predicts its accuracy score (current best: SVC(probability=True) - 0.1441)
-    base_estimator = KNeighborsClassifier(n_neighbors=get_best_amount_of_neighbors).fit(x, t)
-    amount_of_estimators, using_bootstrap = get_best_amount_of_estimators(x, t, base_estimator)
-    ensembles_classifier = BaggingClassifier(base_estimator=base_estimator, n_estimators=amount_of_estimators,
-                                             bootstrap=using_bootstrap, random_state=1).fit(x, t)
+    # Builds classifier and predicts its accuracy score (current best: DecisionTreeClassifier(max_depth=5) -> ~0.5)
+    # base_estimator = KNeighborsClassifier(n_neighbors=get_best_amount_of_neighbors).fit(x, t)
+    # amount_of_estimators, using_bootstrap = get_best_amount_of_estimators(x, t, base_estimator)
+    # ensembles_classifier = BaggingClassifier(base_estimator=base_estimator, n_estimators=amount_of_estimators,
+    #                                          bootstrap=using_bootstrap, random_state=1).fit(x, t)
 
-    classifier = MultiOutputClassifier(ensembles_classifier)
+    classifier = OneVsRestClassifier(DecisionTreeClassifier(max_depth=5)).fit(x, t)
     score = classifier.score(x, t)
     print("Accuracy: {:.4f}".format(score))
 
@@ -97,7 +99,6 @@ def create_ml_model():
     save_ml_model(classifier)
 
     return classifier
-
 
 def create_nn_model():
 
@@ -139,7 +140,6 @@ def create_nn_model():
 
     return model
 
-
 def probabilities_to_percentages(probabilities):
     # Creates a sorted probabilities dictionary
     probabilities_dict = dict(zip(constants.genre_labels, probabilities))
@@ -153,7 +153,6 @@ def probabilities_to_percentages(probabilities):
 
     return percentages_dict
 
-
 def classify(file_paths):
     # Loads test screenplays and classification model
     test_screenplays = load_test_screenplays(file_paths)
@@ -162,16 +161,15 @@ def classify(file_paths):
     classifications_complete = 0
 
     # Tokenizes the screenplays' texts (NN way)
-    sequences = TOKENIZER.texts_to_sequences(test_screenplays["Text"])
-    sequences_matrix = sequences.pad_sequences(sequences, max_len=MAX_SEQUENCE_LENGTH)
-    predictions = pd.DataFrame(model.predict(sequences_matrix), columns=constants.genre_labels)
+    # sequences = TOKENIZER.texts_to_sequences(test_screenplays["Text"])
+    # sequences_matrix = sequences.pad_sequences(sequences, max_len=MAX_SEQUENCE_LENGTH)
+    # predictions = pd.DataFrame(model.predict(sequences_matrix), columns=constants.genre_labels)
 
     # Classifies the test screenplays
     for offset, screenplay in test_screenplays.iterrows():
-        # features_vector = [feature[0] for feature in numpy.array(screenplay[1:]).reshape(-1, 1)]
-        # genre_probabilities = [probability.tolist()[0] for probability in classifier.predict_proba([features_vector])]
-        # genre_probabilities = [probability[0] for probability in genre_probabilities]
-        classifications_dict[file_paths[offset]] = probabilities_to_percentages(predictions[offset])
+        features_vector = [feature[0] for feature in numpy.array(screenplay[1:]).reshape(-1, 1)]
+        genre_probabilities = model.predict_proba([features_vector])[0]
+        classifications_dict[file_paths[offset]] = probabilities_to_percentages(genre_probabilities)
 
         # Prints progress (for GUI to update progress)
         classifications_complete += 1
@@ -179,5 +177,5 @@ def classify(file_paths):
 
         time.sleep(0.5)  # seconds
 
-    return pd.DataFrame({"FilePath": classifications_dict.keys(),
+        return pd.DataFrame({"FilePath": classifications_dict.keys(),
                              "GenrePercentages": classifications_dict.values()})

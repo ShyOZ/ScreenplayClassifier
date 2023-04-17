@@ -7,6 +7,8 @@ import multiprocessing
 
 from pathlib import Path
 from datetime import datetime
+
+import screenplay_processor
 from script_info import ScriptInfo
 # from ScreenplayProcessor import extract_features
 from concurrent.futures import ThreadPoolExecutor
@@ -21,7 +23,7 @@ def load_screenplay(file_path):
 
     time.sleep(0.01)
 
-    return {"filename": screenplay_filename, "Text": screenplay_text}
+    return {"Filename": screenplay_filename, "Text": screenplay_text}
 
 
 def load_train_screenplays():
@@ -62,13 +64,18 @@ def load_train_screenplays():
                                      index=False,
                                      header=not constants.train_csv_path.exists())
 
-            print(f"{datetime.now()}: screenplays records were written to csv file.")
+            print(f"{datetime.now()}: screenplay records were written to csv file.")
 
-    # Merges the loaded train screenplays with their respective labels
-    pandas.read_csv(constants.train_csv_path).merge(load_genres()).to_csv(constants.train_csv_path, index=False)
+    # Merges the loaded train screenplays with their respective features and labels
+    screenplays = pandas.read_csv(constants.train_csv_path)
+    features = screenplay_processor.extract_features(screenplays)
+    genres = load_genres()
+
+    screenplays = screenplays.drop("Text", axis=1)
+    screenplays = screenplays.join(features).merge(genres, on="Filename")
+    screenplays.to_csv(constants.train_csv_path, index=False)
 
     print(f"{datetime.now()}: Processing ended.")
-
 
 def load_test_screenplays(file_paths):
     # Loads the test screenplays using thread for each screenplay
@@ -78,13 +85,18 @@ def load_test_screenplays(file_paths):
         screenplay_threads = [executor.submit(load_screenplay, file_path) for file_path in file_paths]
         screenplay_records = [thread.result() for thread in screenplay_threads]
 
-    return pandas.DataFrame(screenplay_records)
+    screenplays = pandas.DataFrame(screenplay_records)
+    features = screenplay_processor.extract_features(screenplays)
 
+    screenplays = screenplays.drop("Text", axis=1)
+
+    return screenplays.join(features)
 
 def load_genres():
     # Loads the genres labels for the train screenplays
     movie_info = ScriptInfo.schema().loads(constants.movie_info_path.read_text(), many=True)
 
+    # TODO: FIX (needs only Title and Genres, after ALL 1141 screenplays files have matches in Movie Script Info.json)
     screenplays = [[screenplay_info.title,
                     screenplay_info.filename,
                     tuple(screenplay_info.genres)] for screenplay_info in movie_info]
