@@ -11,6 +11,7 @@ from datetime import datetime
 from script_info import ScriptInfo
 from concurrent.futures import ThreadPoolExecutor
 
+
 # Methods
 def load_screenplay(file_path):
     # Loads and processes a screenplay by its file path
@@ -21,6 +22,7 @@ def load_screenplay(file_path):
 
     return {"Filename": screenplay_filename, "Text": screenplay_text}
 
+
 def load_train_screenplays():
     # Validates existence of required directories
     constants.CLASSIFIER_PATH.mkdir(parents=True, exist_ok=True)
@@ -30,9 +32,12 @@ def load_train_screenplays():
     # Retrieves the paths of the train screenplays left to load
     train_screenplays_paths = constants.TRAIN_SCREENPLAYS_PATHS
     if Path.exists(constants.TRAIN_CSV_PATH):
-        trained_screenplays_titles = pandas.read_csv(constants.TRAIN_CSV_PATH, usecols=["Title"]).Title
-        trained_screenplays_paths = map(lambda title: constants.TRAIN_SCREENPLAYS_PATH / f"{title}.txt",
-                                        trained_screenplays_titles)
+
+        trained_screenplays_filenames = pandas.read_csv(constants.TRAIN_CSV_PATH,
+                                                        usecols=["Filename"],
+                                                        dtype={"Filename": str}).Filename
+        trained_screenplays_paths = map(lambda filename: constants.TRAIN_SCREENPLAYS_PATH / f"{filename}.txt",
+                                        trained_screenplays_filenames)
         train_screenplays_paths = list(filter(lambda path: path not in trained_screenplays_paths,
                                               train_screenplays_paths))
 
@@ -62,7 +67,7 @@ def load_train_screenplays():
             print(f"{datetime.now()}: screenplay records were written to csv file.")
 
     # Merges the loaded train screenplays with their respective features and labels
-    screenplays = pandas.read_csv(constants.TRAIN_CSV_PATH)
+    screenplays = pandas.read_csv(constants.TRAIN_CSV_PATH, dtype={"Filename": str, "Title": str})
     features = screenplay_processor.extract_features(screenplays)
     genres = load_genres()
 
@@ -71,6 +76,7 @@ def load_train_screenplays():
     screenplays.to_csv(constants.TRAIN_CSV_PATH, index=False)
 
     print(f"{datetime.now()}: Processing ended.")
+
 
 def load_test_screenplays(file_paths):
     # Loads the test screenplays using thread for each screenplay
@@ -87,6 +93,7 @@ def load_test_screenplays(file_paths):
     screenplays = screenplays.drop(columns=["Text"], axis=1)
 
     return screenplays.join(features)
+
 
 def load_genres():
     # Loads the genres labels for the train screenplays

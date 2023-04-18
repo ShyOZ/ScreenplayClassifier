@@ -10,6 +10,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 # Globals
 tf_idf_vectorizer = TfidfVectorizer(max_features=constants.FEATURES_COUNT)
 
+
 # Methods
 def clean_text(text):
     # Cleans the text from non-alphabetic chars
@@ -24,6 +25,7 @@ def clean_text(text):
     text = " ".join([stemmer.stem(word) for word in text.split() if word not in stop_words])
 
     return text
+
 
 def extract_features(screenplays):
     # Cleans all screenplays' texts

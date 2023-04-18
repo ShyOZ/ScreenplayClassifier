@@ -1,5 +1,7 @@
 import re
 import json
+from pathlib import Path
+
 import requests
 from tqdm import tqdm
 import multiprocessing
@@ -26,8 +28,12 @@ def get_movie_info_links_from_genre(genre: str) -> Optional[Set[str]]:
 
 
 def standardize_title(title: str) -> str:
-    if title.endswith(" The"):
-        title = "The " + title[:-4]
+    the_idx = title.find(", The")
+    if the_idx != -1:
+        title = "The " + title[:the_idx] + title[the_idx + 5:]
+    a_idx = title.find(", A")
+    if a_idx != -1:
+        title = "A " + title[:a_idx] + title[a_idx + 3:]
     return title.replace(":", " -")
 
 
@@ -58,6 +64,11 @@ def get_script_information(movie_info_url: str) -> Optional[ScriptInfo]:
 
     genre_links = details_table.find_all("a", title=re.compile("Scripts$"))
     genres = {genre["href"][len("/genre/"):] for genre in genre_links}
+
+    if "Sci-Fi" in genres:
+        genres.remove("Sci-Fi")
+        genres.add("SciFi")
+
     genres = set(filter(lambda g: g in constants.GENRE_LABELS, genres))
 
     return ScriptInfo(standardize_title(title), as_filename_compatible(title), movie_info_url, script_url, genres)
@@ -82,7 +93,7 @@ def get_movie_script(script_url: str) -> Optional[str]:
 
 
 def write_script_to_file(script_filename: str, script_text: str) -> None:
-    script_file_path = constants.TRAIN_SCREENPLAYS_PATHS / (script_filename + ".txt")
+    script_file_path = Path(constants.TRAIN_SCREENPLAYS_PATH / script_filename).with_suffix(".txt")
     script_file_path.write_text(script_text, encoding="utf-8")
 
 
@@ -92,6 +103,9 @@ def process_script_info(script_info: ScriptInfo) -> Optional[dict]:
             script_text = get_movie_script(script_info.script_url)
 
             if script_text is None:
+                return None
+
+            if len(script_text) < 3000:  # 3kb
                 return None
 
             write_script_to_file(script_info.filename, script_text)

@@ -10,6 +10,7 @@ from sklearn.tree import DecisionTreeClassifier
 from loader import load_test_screenplays
 from sklearn.preprocessing import MultiLabelBinarizer
 
+
 # Methods
 def load_model():
     # Validates existence of pickle file
@@ -23,15 +24,17 @@ def load_model():
 
     return model
 
+
 def save_model(model):
     # Writes model variables to pickle file
     pickle_file = open(constants.MODEL_PICKLE_PATH, "wb")
     pickle.dump(model, pickle_file)
     pickle_file.close()
 
+
 def create_model():
     # Converts the genres of each screenplay into a list
-    train_screenplays = pandas.read_csv(constants.TRAIN_CSV_PATH)
+    train_screenplays = pandas.read_csv(constants.TRAIN_CSV_PATH, dtype={"Filename": str, "Title": str})
     train_screenplays["Genres"] = [eval(genres) for genres in train_screenplays["Genres"]]
 
     # Splits the data into labels (t) and features (x)
@@ -50,6 +53,7 @@ def create_model():
 
     return classifier
 
+
 def probabilities_to_percentages(probabilities):
     # Creates a sorted probabilities dictionary
     probabilities_dict = dict(zip(constants.GENRE_LABELS, probabilities))
@@ -62,6 +66,7 @@ def probabilities_to_percentages(probabilities):
         percentages_dict[genre] = (probability / sum_of_probabilities) * 100
 
     return percentages_dict
+
 
 def classify(file_paths):
     # Loads test screenplays and classification model
