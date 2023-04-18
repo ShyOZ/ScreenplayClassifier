@@ -1,46 +1,20 @@
 # Imports
 import time
 import numpy
-import pandas as pd
+import pandas
 import pickle
-
-from sklearn.linear_model import LogisticRegression
-from sklearn.multiclass import OneVsRestClassifier
-from sklearn.naive_bayes import GaussianNB, MultinomialNB
-from sklearn.svm import SVC
-from sklearn.tree import DecisionTreeClassifier
-
 import constants
 
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.tree import DecisionTreeClassifier
 from loader import load_test_screenplays
-# from ScreenplayProcessor import time_periods, times_of_day
-from sklearn.ensemble import BaggingClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.multioutput import MultiOutputClassifier
-from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import MultiLabelBinarizer
 
-from keras.models import Model
-from keras.layers import LSTM, Activation, Dense, Dropout, Input, Embedding
-from keras_preprocessing import sequence
-from keras_preprocessing.text import Tokenizer
-
-from script_loader import ScriptLoader
-from script_info import ScriptInfo
-
-# Globals
-MAX_WORDS, MAX_SEQUENCE_LENGTH = 200000, 150
-TOKENIZER = Tokenizer(num_words=MAX_WORDS)
-CLASS_NUM = len(constants.genre_labels)
-BATCH_SIZE, EPOCH = 128, 15
-
-VALIDATION_SPLIT = 0.2
-
 # Methods
-def load_ml_model():
+def load_model():
     # Validates existence of pickle file
     if not constants.model_pickle_path.exists():
-        return create_ml_model()
+        return create_model()
 
     # Reads model variables from pickle file
     pickle_file = open(constants.model_pickle_path, "rb")
@@ -49,96 +23,32 @@ def load_ml_model():
 
     return model
 
-def save_ml_model(model):
+def save_model(model):
     # Writes model variables to pickle file
     pickle_file = open(constants.model_pickle_path, "wb")
     pickle.dump(model, pickle_file)
     pickle_file.close()
 
-# def encode(screenplays):
-#     # Encodes the textual values in the screenplays dataframe
-#     screenplays.replace({"Time Period": {period: time_periods.index(period) for period in time_periods},
-#                          "Time of Day": {time: times_of_day.index(time) for time in times_of_day}},
-#                         inplace=True)
-#
-#     return screenplays
-
-def get_best_amount_of_neighbors(x, t):
-    hyper_params = {"n_neighbors": list(range(5, 15))}
-    grid_search = GridSearchCV(KNeighborsClassifier(n_neighbors=5), hyper_params).fit(x, t)
-
-    return grid_search.best_params_["n_neighbors"]
-
-def get_best_amount_of_estimators(x, t, base_estimator):
-    hyper_params = {"n_estimators": list(range(5, 10)), "bootstrap": [True, False]}
-    grid_search = GridSearchCV(BaggingClassifier(base_estimator=base_estimator, random_state=1), hyper_params,
-                               scoring="neg_log_loss").fit(x, t)
-
-    return grid_search.best_params_["n_estimators"], grid_search.best_params_["bootstrap"]
-
-def create_ml_model():
-    # Creates a classification model
-    train_screenplays = pd.read_csv(constants.train_csv_path)
+def create_model():
+    # Converts the genres of each screenplay into a list
+    train_screenplays = pandas.read_csv(constants.train_csv_path)
     train_screenplays["Genres"] = [eval(genres) for genres in train_screenplays["Genres"]]
 
+    # Splits the data into labels (t) and features (x)
     t = MultiLabelBinarizer().fit_transform(train_screenplays["Genres"])
     x = train_screenplays.drop(["Title", "Filename", "Genres"], axis=1)
-    x_train, x_validation, t_train, t_validation = train_test_split(x, t, test_size=0.2, random_state=42)
 
-    # Builds classifier and predicts its accuracy score (current best: DecisionTreeClassifier(max_depth=5) -> ~0.5)
-    # base_estimator = KNeighborsClassifier(n_neighbors=get_best_amount_of_neighbors).fit(x, t)
-    # amount_of_estimators, using_bootstrap = get_best_amount_of_estimators(x, t, base_estimator)
-    # ensembles_classifier = BaggingClassifier(base_estimator=base_estimator, n_estimators=amount_of_estimators,
-    #                                          bootstrap=using_bootstrap, random_state=1).fit(x, t)
+    # Creates a classification model and prints its accuracy score (current model: 0.7721)
+    classifier = OneVsRestClassifier(DecisionTreeClassifier(max_depth=constants.decision_tree_depth))
+    classifier.fit(x, t)
 
-    classifier = OneVsRestClassifier(DecisionTreeClassifier(max_depth=5)).fit(x, t)
     score = classifier.score(x, t)
     print("Accuracy: {:.4f}".format(score))
 
     # Saves the model to file
-    save_ml_model(classifier)
+    save_model(classifier)
 
     return classifier
-
-def create_nn_model():
-
-    scripts_iter = ScriptLoader(constants.train_screenplays_directory,
-                                ScriptInfo.schema().loads(constants.movie_info_path.read_text(), many=True),
-                                True)
-    data = ((text, list(genres)) for text, _, _, genres in scripts_iter)
-    screenplays_texts, y = zip(*data)
-
-    y = pd.DataFrame(MultiLabelBinarizer().fit_transform(y))
-
-    # train_screenplays = pd.read_csv(constants.train_csv_path)
-    # # Tokenizes the screenplays' texts
-    # screenplays_texts = train_screenplays["Text"]
-    #
-    # y = pd.get_dummies(train_screenplays["Genres"])
-
-    TOKENIZER.fit_on_texts(screenplays_texts)
-    sequences = TOKENIZER.texts_to_sequences(screenplays_texts)
-    sequences_matrix = sequence.pad_sequences(sequences, maxlen=MAX_SEQUENCE_LENGTH)
-
-    # tfidf_matrix = TOKENIZER.texts_to_matrix(screenplays_texts, mode="tfidf")
-    # print(tfidf_matrix.shape)
-
-    # Builds a Recurrent Neural Network (RNN)
-    inputs = Input(name="inputs", shape=[MAX_SEQUENCE_LENGTH])
-    layer = Embedding(MAX_WORDS, 50, input_length=MAX_SEQUENCE_LENGTH)(inputs)
-    layer = LSTM(100)(layer)
-    layer = Dense(256, activation="elu")(layer)
-    layer = Dropout(0.5)(layer)
-    outputs = Dense(CLASS_NUM, activation="sigmoid", name="outputs")(layer)
-
-    model = Model(inputs=inputs, outputs=outputs)
-    model.compile(loss="categorical_crossentropy", optimizer="Adamax", metrics="accuracy")
-    model.fit(sequences_matrix, y, batch_size=BATCH_SIZE, epochs=EPOCH, validation_split=VALIDATION_SPLIT)
-
-    model.save(constants.model_path,
-               save_traces=False,)
-
-    return model
 
 def probabilities_to_percentages(probabilities):
     # Creates a sorted probabilities dictionary
@@ -156,14 +66,9 @@ def probabilities_to_percentages(probabilities):
 def classify(file_paths):
     # Loads test screenplays and classification model
     test_screenplays = load_test_screenplays(file_paths)
-    model = load_ml_model()
+    model = load_model()
     classifications_dict = {}
     classifications_complete = 0
-
-    # Tokenizes the screenplays' texts (NN way)
-    # sequences = TOKENIZER.texts_to_sequences(test_screenplays["Text"])
-    # sequences_matrix = sequences.pad_sequences(sequences, max_len=MAX_SEQUENCE_LENGTH)
-    # predictions = pd.DataFrame(model.predict(sequences_matrix), columns=constants.genre_labels)
 
     # Classifies the test screenplays
     for offset, screenplay in test_screenplays.iterrows():
@@ -177,5 +82,5 @@ def classify(file_paths):
 
         time.sleep(0.5)  # seconds
 
-        return pd.DataFrame({"FilePath": classifications_dict.keys(),
-                             "GenrePercentages": classifications_dict.values()})
+        return pandas.DataFrame({"FilePath": classifications_dict.keys(),
+                                 "GenrePercentages": classifications_dict.values()})

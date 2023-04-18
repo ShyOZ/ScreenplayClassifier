@@ -1,13 +1,14 @@
+# Imports
 from dataclasses import dataclass, field
 from typing import Set
-
 from dataclasses_json import dataclass_json, config
 from marshmallow import fields
 
-
+# Classes
 @dataclass_json
 @dataclass(frozen=True)
 class ScriptInfo:
+    # Fields
     title: str
     filename: str
     info_url: str

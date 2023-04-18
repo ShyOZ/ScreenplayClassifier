@@ -3,28 +3,23 @@ import math
 import time
 import pandas
 import constants
+import screenplay_processor
 import multiprocessing
 
 from pathlib import Path
 from datetime import datetime
-
-import screenplay_processor
 from script_info import ScriptInfo
-# from ScreenplayProcessor import extract_features
 from concurrent.futures import ThreadPoolExecutor
-
 
 # Methods
 def load_screenplay(file_path):
     # Loads and processes a screenplay by its file path
     screenplay_filename = Path(file_path).stem
     screenplay_text = open(file_path, "r", encoding="utf8").read()
-    # screenplay_features = extract_features(screenplay_title, screenplay_text)
 
     time.sleep(0.01)
 
     return {"Filename": screenplay_filename, "Text": screenplay_text}
-
 
 def load_train_screenplays():
     # Validates existence of required directories
@@ -71,7 +66,7 @@ def load_train_screenplays():
     features = screenplay_processor.extract_features(screenplays)
     genres = load_genres()
 
-    screenplays = screenplays.drop("Text", axis=1)
+    screenplays = screenplays.drop(columns=["Text"], axis=1)
     screenplays = screenplays.join(features).merge(genres, on="Filename")
     screenplays.to_csv(constants.train_csv_path, index=False)
 
@@ -85,10 +80,11 @@ def load_test_screenplays(file_paths):
         screenplay_threads = [executor.submit(load_screenplay, file_path) for file_path in file_paths]
         screenplay_records = [thread.result() for thread in screenplay_threads]
 
+    # Merges the loaded test screenplays with their respective features
     screenplays = pandas.DataFrame(screenplay_records)
     features = screenplay_processor.extract_features(screenplays)
 
-    screenplays = screenplays.drop("Text", axis=1)
+    screenplays = screenplays.drop(columns=["Text"], axis=1)
 
     return screenplays.join(features)
 
@@ -96,7 +92,6 @@ def load_genres():
     # Loads the genres labels for the train screenplays
     movie_info = ScriptInfo.schema().loads(constants.movie_info_path.read_text(), many=True)
 
-    # TODO: FIX (needs only Title and Genres, after ALL 1141 screenplays files have matches in Movie Script Info.json)
     screenplays = [[screenplay_info.title,
                     screenplay_info.filename,
                     tuple(screenplay_info.genres)] for screenplay_info in movie_info]
