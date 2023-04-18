@@ -8,7 +8,7 @@ from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 # Globals
-tf_idf_vectorizer = TfidfVectorizer(max_features=constants.features_count)
+tf_idf_vectorizer = TfidfVectorizer(max_features=constants.FEATURES_COUNT)
 
 # Methods
 def clean_text(text):

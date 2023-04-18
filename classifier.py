@@ -13,11 +13,11 @@ from sklearn.preprocessing import MultiLabelBinarizer
 # Methods
 def load_model():
     # Validates existence of pickle file
-    if not constants.model_pickle_path.exists():
+    if not constants.MODEL_PICKLE_PATH.exists():
         return create_model()
 
     # Reads model variables from pickle file
-    pickle_file = open(constants.model_pickle_path, "rb")
+    pickle_file = open(constants.MODEL_PICKLE_PATH, "rb")
     model = pickle.load(pickle_file)
     pickle_file.close()
 
@@ -25,13 +25,13 @@ def load_model():
 
 def save_model(model):
     # Writes model variables to pickle file
-    pickle_file = open(constants.model_pickle_path, "wb")
+    pickle_file = open(constants.MODEL_PICKLE_PATH, "wb")
     pickle.dump(model, pickle_file)
     pickle_file.close()
 
 def create_model():
     # Converts the genres of each screenplay into a list
-    train_screenplays = pandas.read_csv(constants.train_csv_path)
+    train_screenplays = pandas.read_csv(constants.TRAIN_CSV_PATH)
     train_screenplays["Genres"] = [eval(genres) for genres in train_screenplays["Genres"]]
 
     # Splits the data into labels (t) and features (x)
@@ -39,7 +39,7 @@ def create_model():
     x = train_screenplays.drop(["Title", "Filename", "Genres"], axis=1)
 
     # Creates a classification model and prints its accuracy score (current model: 0.7721)
-    classifier = OneVsRestClassifier(DecisionTreeClassifier(max_depth=constants.decision_tree_depth))
+    classifier = OneVsRestClassifier(DecisionTreeClassifier(max_depth=constants.DECISION_TREE_DEPTH))
     classifier.fit(x, t)
 
     score = classifier.score(x, t)
@@ -52,7 +52,7 @@ def create_model():
 
 def probabilities_to_percentages(probabilities):
     # Creates a sorted probabilities dictionary
-    probabilities_dict = dict(zip(constants.genre_labels, probabilities))
+    probabilities_dict = dict(zip(constants.GENRE_LABELS, probabilities))
     probabilities_dict = dict(sorted(probabilities_dict.items(), key=lambda item: item[1], reverse=True))
     sum_of_probabilities = sum(probabilities)
     percentages_dict = {}

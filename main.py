@@ -6,7 +6,7 @@ import loader
 
 # Main
 if __name__ == "__main__":
-    if constants.train_mode:
+    if constants.TRAIN_MODE:
         # Loads and pre-processes the train screenplays
         loader.load_train_screenplays()
     else:

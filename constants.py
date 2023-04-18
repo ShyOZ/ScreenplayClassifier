@@ -5,28 +5,28 @@ from pathlib import Path
 
 ####################################################### Folders #######################################################
 
-movie_info_path = Path("Jsons/Movie Script Info.json")
-genres_path = Path("Jsons/Genres.json")
+MOVIE_INFO_PATH = Path("Jsons/Movie Script Info.json")
+GENRES_PATH = Path("Jsons/Genres.json")
 
-train_screenplays_directory = Path("TrainScreenplays")
-test_screenplays_directory = Path("TestScreenplays")
+TRAIN_SCREENPLAYS_PATH = Path("TrainScreenplays")
+TEST_SCREENPLAYS_PATH = Path("TestScreenplays")
 
-classifier_path = Path("Classifier")
-model_path = classifier_path / "Model"
+CLASSIFIER_PATH = Path("Classifier")
+MODEL_PATH = CLASSIFIER_PATH / "Model"
 
 ######################################################## Files ########################################################
 
-train_screenplays_paths = list(train_screenplays_directory.glob("*.txt"))
-test_screenplays_paths = list(test_screenplays_directory.glob("*.txt"))
+TRAIN_SCREENPLAYS_PATHS = list(TRAIN_SCREENPLAYS_PATH.glob("*.txt"))
+TEST_SCREENPLAYS_PATHS = list(TEST_SCREENPLAYS_PATH.glob("*.txt"))
 
-model_pickle_path = classifier_path / "Model.pkl"
-train_csv_path = classifier_path / "Train.csv"
-test_csv_path = classifier_path / "Test.csv"
+MODEL_PICKLE_PATH = CLASSIFIER_PATH / "Model.pkl"
+TRAIN_CSV_PATH = CLASSIFIER_PATH / "Train.csv"
+TEST_CSV_PATH = CLASSIFIER_PATH / "Test.csv"
 
 ###################################################### Variables ######################################################
 
-train_mode = False
+TRAIN_MODE = False
 
-genre_labels = json.loads(genres_path.read_text())
-features_count = 1000
-decision_tree_depth = 7
+GENRE_LABELS = json.loads(GENRES_PATH.read_text())
+FEATURES_COUNT = 1000
+DECISION_TREE_DEPTH = 7

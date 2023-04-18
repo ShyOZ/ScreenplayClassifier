@@ -23,15 +23,15 @@ def load_screenplay(file_path):
 
 def load_train_screenplays():
     # Validates existence of required directories
-    constants.classifier_path.mkdir(parents=True, exist_ok=True)
-    if not Path.exists(constants.train_screenplays_directory):
+    constants.CLASSIFIER_PATH.mkdir(parents=True, exist_ok=True)
+    if not Path.exists(constants.TRAIN_SCREENPLAYS_PATH):
         raise FileNotFoundError("TrainScreenplays directory not found.")
 
     # Retrieves the paths of the train screenplays left to load
-    train_screenplays_paths = constants.train_screenplays_paths
-    if Path.exists(constants.train_csv_path):
-        trained_screenplays_titles = pandas.read_csv(constants.train_csv_path, usecols=["Title"]).Title
-        trained_screenplays_paths = map(lambda title: constants.train_screenplays_directory / f"{title}.txt",
+    train_screenplays_paths = constants.TRAIN_SCREENPLAYS_PATHS
+    if Path.exists(constants.TRAIN_CSV_PATH):
+        trained_screenplays_titles = pandas.read_csv(constants.TRAIN_CSV_PATH, usecols=["Title"]).Title
+        trained_screenplays_paths = map(lambda title: constants.TRAIN_SCREENPLAYS_PATH / f"{title}.txt",
                                         trained_screenplays_titles)
         train_screenplays_paths = list(filter(lambda path: path not in trained_screenplays_paths,
                                               train_screenplays_paths))
@@ -54,21 +54,21 @@ def load_train_screenplays():
 
             # Appends the loaded batch to csv file
             screenplays_batch = pandas.DataFrame(screenplays_batch)
-            screenplays_batch.to_csv(constants.train_csv_path,
+            screenplays_batch.to_csv(constants.TRAIN_CSV_PATH,
                                      mode="a",
                                      index=False,
-                                     header=not constants.train_csv_path.exists())
+                                     header=not constants.TRAIN_CSV_PATH.exists())
 
             print(f"{datetime.now()}: screenplay records were written to csv file.")
 
     # Merges the loaded train screenplays with their respective features and labels
-    screenplays = pandas.read_csv(constants.train_csv_path)
+    screenplays = pandas.read_csv(constants.TRAIN_CSV_PATH)
     features = screenplay_processor.extract_features(screenplays)
     genres = load_genres()
 
     screenplays = screenplays.drop(columns=["Text"], axis=1)
     screenplays = screenplays.join(features).merge(genres, on="Filename")
-    screenplays.to_csv(constants.train_csv_path, index=False)
+    screenplays.to_csv(constants.TRAIN_CSV_PATH, index=False)
 
     print(f"{datetime.now()}: Processing ended.")
 
@@ -90,7 +90,7 @@ def load_test_screenplays(file_paths):
 
 def load_genres():
     # Loads the genres labels for the train screenplays
-    movie_info = ScriptInfo.schema().loads(constants.movie_info_path.read_text(), many=True)
+    movie_info = ScriptInfo.schema().loads(constants.MOVIE_INFO_PATH.read_text(), many=True)
 
     screenplays = [[screenplay_info.title,
                     screenplay_info.filename,
