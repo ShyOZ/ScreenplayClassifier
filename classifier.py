@@ -3,6 +3,9 @@ import time
 import numpy
 import pandas
 import pickle
+
+from sklearn.model_selection import train_test_split
+
 import constants
 
 from sklearn.multiclass import OneVsRestClassifier
@@ -41,11 +44,18 @@ def create_model():
     t = MultiLabelBinarizer().fit_transform(train_screenplays["Genres"])
     x = train_screenplays.drop(["Title", "Filename", "Genres"], axis=1)
 
-    # Creates a classification model and prints its accuracy score (current model: 0.7721)
+    # Creates a classification model and prints its accuracy score
     classifier = OneVsRestClassifier(DecisionTreeClassifier(max_depth=constants.DECISION_TREE_DEPTH))
-    classifier.fit(x, t)
 
-    score = classifier.score(x, t)
+    if constants.DATA_SPLIT:
+        x_train, x_validation, t_train, t_validation = train_test_split(x, t, test_size=0.2, random_state=1)
+
+        classifier.fit(x_train, t_train)
+        score = classifier.score(x_validation, t_validation)
+    else:
+        classifier.fit(x, t)
+        score = classifier.score(x, t)
+
     print("Accuracy: {:.4f}".format(score))
 
     # Saves the model to file

@@ -32,7 +32,6 @@ def load_train_screenplays():
     # Retrieves the paths of the train screenplays left to load
     train_screenplays_paths = constants.TRAIN_SCREENPLAYS_PATHS
     if Path.exists(constants.TRAIN_CSV_PATH):
-
         trained_screenplays_filenames = pandas.read_csv(constants.TRAIN_CSV_PATH,
                                                         usecols=["Filename"],
                                                         dtype={"Filename": str}).Filename
@@ -67,7 +66,7 @@ def load_train_screenplays():
             print(f"{datetime.now()}: screenplay records were written to csv file.")
 
     # Merges the loaded train screenplays with their respective features and labels
-    screenplays = pandas.read_csv(constants.TRAIN_CSV_PATH, dtype={"Filename": str, "Title": str})
+    screenplays = pandas.read_csv(constants.TRAIN_CSV_PATH)
     features = screenplay_processor.extract_features(screenplays)
     genres = load_genres()
 

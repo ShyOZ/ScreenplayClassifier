@@ -3,18 +3,13 @@ import sys
 import classifier
 import constants
 import loader
-import pandas as pd
+
 
 # Main
 if __name__ == "__main__":
     if constants.TRAIN_MODE:
         # Loads and pre-processes the train screenplays
-        # loader.load_train_screenplays()
-        # classifier.create_model()
-
-        df = pd.read_csv(constants.TRAIN_CSV_PATH)
-        print(len(df))
-
+        loader.load_train_screenplays()
     else:
         # Loads, pre-processes and classifies the test screenplays
         classifications = classifier.classify(sys.argv[1:])
