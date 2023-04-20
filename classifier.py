@@ -3,15 +3,13 @@ import time
 import numpy
 import pandas
 import pickle
-
-from sklearn.model_selection import train_test_split
-
 import constants
 
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from loader import load_test_screenplays
 from sklearn.preprocessing import MultiLabelBinarizer
+from sklearn.model_selection import train_test_split
 
 
 # Methods
