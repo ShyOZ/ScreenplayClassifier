@@ -95,5 +95,5 @@ def classify(file_paths):
 
         time.sleep(0.5)  # seconds
 
-        return pandas.DataFrame({"FilePath": classifications_dict.keys(),
-                                 "GenrePercentages": classifications_dict.values()})
+    return pandas.DataFrame({"FilePath": classifications_dict.keys(),
+                             "GenrePercentages": classifications_dict.values()})
